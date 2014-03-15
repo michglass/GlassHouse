@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">GlassHouse</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="glassapp">Glass House</string>
+
 
 </resources>
