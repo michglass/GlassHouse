@@ -5,11 +5,13 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.IOException;
@@ -73,6 +75,7 @@ public class BluetoothService extends Service {
 
     public static final int PICTURE_MESSAGE = 14;
     public static final int TEXT_MESSAGE = 15;
+    public static final int INT_MESSAGE = 16;
 
     /**
      * Service Methods
@@ -167,8 +170,12 @@ public class BluetoothService extends Service {
 
                 case PICTURE_MESSAGE:
                     Log.v(TAG, "Picture for Android");
+                    Bitmap bitMap = (Bitmap) msg.obj;
+                    // sendPictureToAndroid(bitMap);
                     break;
                 case TEXT_MESSAGE:
+                    String text = (String) msg.obj;
+                    sendStringToAndroid(text);
                     Log.v(TAG, "Text msg for Android");
                     break;
                 case REGISTER_CLIENT:
@@ -313,6 +320,14 @@ public class BluetoothService extends Service {
             }
         }
     }
+    public void sendStringToAndroid(String text) {
+        if(mCurrState != BluetoothService.STATE_NONE) {
+            if(mConnectedThread != null)
+                mConnectedThread.writeString(text);
+            else
+                Log.v(TAG, "Connection not yet established");
+        }
+    }
 
 
     /**
@@ -412,29 +427,37 @@ public class BluetoothService extends Service {
          */
         @Override
         public void run() {
+            int i = 0;
             Log.v(TAG, "Run");
             // Connect device through Socket
             // Blocking call!
-            try {
-                Log.v(TAG, "Try connecting through socket");
-                mmBtSocket.connect();
-            } catch (IOException connectException) {
-                // unable to connect, try closing socket
+            while(!mmBtSocket.isConnected()) {
                 try {
-                    Log.v(TAG, "Unable to connect");
+                    Log.v(TAG, "Try connecting through socket");
+                    mmBtSocket.connect();
+                } catch (IOException connectException) {
+                    // unable to connect, try closing socket
+                    Log.v(TAG, "Unable to Connect");
+                    if(i == 5) {
+                        Log.v(TAG, "Connection request timed out, Shut Down");
+                        try {
+                            // send message to activity
+                            sendMessageToClient(BluetoothService.MESSAGE_CONNECTION_FAILED);
 
-                    // send message to activity
-                    sendMessageToClient(BluetoothService.MESSAGE_CONNECTION_FAILED);
-
-                    // close Socket
-                    mmBtSocket.close();
-                } catch(IOException closeException) {
-                    Log.e(TAG, "Closing Socket Failed", closeException);
+                            // close Socket
+                            mmBtSocket.close();
+                        } catch (IOException closeException) {
+                            Log.e(TAG, "Closing Socket Failed", closeException);
+                        }
+                        Log.v(TAG, "Run Return after Fail");
+                        return;
+                    } else {
+                        Log.v(TAG, "Try connecting again in 3sec");
+                        i++;
+                        SystemClock.sleep(3000);
+                    }
                 }
-                Log.v(TAG, "Run Return after Fail");
-                return;
             }
-
             // connection established, manage connection
             manageConnection(mmBtSocket);
             Log.v(TAG, "Run Return after Success");
@@ -518,7 +541,6 @@ public class BluetoothService extends Service {
 
                     // Handler sends message to Activity
                     sendMessageToClient(inMessage);
-
                 } catch (IOException ioE) {
                     Log.e(TAG, "Failed reading inStream", ioE);
                     break;
@@ -534,6 +556,16 @@ public class BluetoothService extends Service {
         public void write(int msg) {
             Log.v(TAG, "Write Out");
             byte[] buffer = ByteBuffer.allocate(4).putInt(msg).array();
+
+            try {
+                mmOutStream.write(buffer);
+            } catch (IOException e) {
+                Log.e(TAG, "Failed writing to Android", e);
+            }
+        }
+        public void writeString(String msg) {
+            Log.v(TAG, "Write Out");
+            byte[] buffer = msg.getBytes();
 
             try {
                 mmOutStream.write(buffer);
