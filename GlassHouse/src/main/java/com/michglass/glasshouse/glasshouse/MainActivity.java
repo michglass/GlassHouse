@@ -27,12 +27,7 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
 
     private Card mCard = new Card(this);
-    private boolean baseMenu = true;
-    private boolean colorMenu = false;
-    private boolean animalMenu = false;
-    private boolean foodMenu = false;
     private Handler handler = new Handler();
-
 
     // Debug
     private static final String TAG = "Main Activity";
@@ -41,9 +36,6 @@ public class MainActivity extends Activity {
     private BluetoothAdapter mbtAdapter;
     private BluetoothService mbtService;
 
-    // Card that displays message from android phone
-    Card msgCard;
-
     // Request Variables
     private static final int REQUEST_ENABLE_BT = 1;
 
@@ -51,173 +43,15 @@ public class MainActivity extends Activity {
     public static final int MESSAGE_STATE_CHANGE = 3; // indicates connection state change (debug)
     public static final int MESSAGE_INCOMING = 4; // message with string content (only for debug)
 
-    // messages that indicate commands (Tap = select, Right, Left, Down = back)
     public static final int COMMAND_OK = 1;
-    public static final int COMMAND_BACK = 2;
-
-    MenuBuilder menuBuild = new MenuBuilder();
-    int index =0;
-
-    String msgToSend = "";
-    String contact = "";
-    String menuText = "";
-    int menuImage = -1;
-
-    MenuOption messageOpt = new MenuOption();
-    MenuOption helpOpt = new MenuOption();
-    MenuOption question = new MenuOption();
-    MenuOption friend = new MenuOption();
-    MenuOption family = new MenuOption();
-    MenuOption day = new MenuOption();
-    MenuOption where = new MenuOption();
-    MenuOption homeTime = new MenuOption();
-    MenuOption bathroom = new MenuOption();
-    MenuOption coldTemp = new MenuOption();
-    MenuOption hotTemp = new MenuOption();
-    MenuOption helpMe = new MenuOption();
-    MenuOption dad = new MenuOption();
-    MenuOption mom = new MenuOption();
-    MenuOption friend1 = new MenuOption();
-    MenuOption friend2 = new MenuOption();
-    MenuOption friend3 = new MenuOption();
-    MenuOption message = new MenuOption();
-    MenuOption camera = new MenuOption();
-    MenuOption picture = new MenuOption();
-    MenuOption video = new MenuOption();
-    MenuOption send = new MenuOption();
-    MenuOption redo = new MenuOption();
-    MenuOption delete = new MenuOption();
-
-    ArrayList<MenuOption> questionList = new ArrayList();
-    ArrayList<MenuOption> helpList = new ArrayList();
-    ArrayList<MenuOption> messageList = new ArrayList();
-    ArrayList<MenuOption> relationshipList = new ArrayList();
-    ArrayList<MenuOption> friendList = new ArrayList();
-    ArrayList<MenuOption> familyList = new ArrayList();
-    ArrayList<MenuOption> commandList = new ArrayList();
-    ArrayList<MenuOption> cameraList = new ArrayList();
-    ArrayList<MenuOption> pictureList = new ArrayList();
-    ArrayList<MenuOption> videoList = new ArrayList();
-    Globals gList = (Globals)getApplication();
-
-
-
-    //Create the Menu Options
-
-    private Runnable runnable = new Runnable() {
-        @Override
-        public void run() {
-            //Debugging
-            Log.v(TAG, "inside void run()");
-
-            //Clear any images from card so we can add a new one
-            mCard.clearImages();
-
-            //Check if we are at the end of the list, if so, reset index
-            if(index < gList.getList().size()){
-                menuText = gList.getList().get(index).displayText;
-                mCard.setText(menuText);
-
-                Log.v(TAG,"Current List in Run: " +menuText);
-                index++;
-            }
-            else{
-                index = 0;
-                menuText = gList.getList().get(index).displayText;
-                Log.v(TAG,"Current List in Run: " +menuText);
-                mCard.setText(menuText);
-                index++;
-                }
-
-
-
-      /* do what you need to do */
-//            if(baseMenu){
-//                if(mCard.getText() == "Favorite Color"){
-//                    mCard.setText("Favorite Animal");
-//                }
-//                else if(mCard.getText() == "Favorite Animal"){
-//                    mCard.setText("Favorite Food");
-//                }
-//                else{
-//                    mCard.setText("Favorite Color");
-//                }
-//            }
-//            else if(colorMenu){
-//                if(mCard.getText() == "Pink"){
-//                    mCard.setText("Blue");
-//                    mCard.clearImages();
-//                    mCard.addImage(R.drawable.blue);
-//                }
-//                else if(mCard.getText() == "Blue"){
-//                    mCard.setText("Purple");
-//                    mCard.clearImages();
-//                    mCard.addImage(R.drawable.purple);
-//                    int color;
-//                    color = R.drawable.purple;
-//                    mCard.addImage(color);
-//
-//
-//
-//                }
-//                else{
-//                    mCard.setText("Pink");
-//                    mCard.clearImages();
-//                    mCard.addImage(R.drawable.pink);
-//                }
-//            }
-//            else if(animalMenu){
-//                if(mCard.getText() == "Puppies"){
-//                    mCard.setText("Kitties");
-//                    mCard.clearImages();
-//                    //mCard.setImageLayout(Card.ImageLayout.FULL);
-//                    mCard.addImage(R.drawable.kitten);
-//                }
-//                else{
-//                    mCard.setText("Puppies");
-//                    mCard.clearImages();
-//                    //mCard.setImageLayout(Card.ImageLayout.FULL);
-//                    mCard.addImage(R.drawable.puppy);
-//                }
-//            }
-//            else{
-//                if(mCard.getText() == "Ice Cream"){
-//                    mCard.setText("Candy");
-//                    mCard.clearImages();
-//                    mCard.addImage(R.drawable.candy);
-//                }
-//                else if(mCard.getText() == "Candy"){
-//                    mCard.setText("Fruit");
-//                    mCard.clearImages();
-//                    mCard.addImage(R.drawable.fruits);
-//                }
-//                else{
-//                    mCard.setText("Ice Cream");
-//                    mCard.clearImages();
-//                    mCard.addImage(R.drawable.icecream);
-//                }
-//            }
-
-
-            setContentView(mCard.toView());
-
-      /* and here comes the "trick" */
-            handler.postDelayed(this, 5000);
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v(TAG, "On Create");
-
         super.onCreate(savedInstanceState);
+        Log.v(TAG, "On Create");
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        msgCard = new Card(this);
-        msgCard.setText("Messages get displayed here");
-        setContentView(msgCard.toView());
 
         this.mbtAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mbtAdapter == null) {
@@ -225,16 +59,7 @@ public class MainActivity extends Activity {
             finish();
         }
 
-        menuBuild.build(questionList,helpList,messageList, relationshipList,
-                friendList, familyList, commandList, cameraList, pictureList,videoList,
-                helpOpt, question, friend, family, where,day, homeTime, bathroom, coldTemp,
-                hotTemp, helpMe, dad, mom, friend1, friend2, friend3, message,camera, picture,
-                video, send, redo, delete);
-        gList.setList(commandList);
         runnable.run();
-        //mCard.setText("Favorite Color");
-        //setContentView(mCard.toView());
-        //mCard.setImageLayout(Card.ImageLayout.FULL);
     }
 
     @Override
@@ -243,21 +68,29 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Destroy");
 
         if(mbtService != null) {
-            mbtService.stopThreads();
+            // *** FIX mbtService.stopThreads();
         }
     }
 
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            //Debugging
+            Log.v(TAG, "inside void run()");
 
-//From GlassBluetooth
+            setContentView(mCard.toView());
 
+            /* and here comes the "trick" */
+            handler.postDelayed(this, 5000);
+        }
+    };
+
+    //From GlassBluetooth
 
     @Override
     protected void onStart() {
         super.onStart();
         Log.v(TAG, "On Start");
-
-        msgCard.setText("Welcome to Grace's Glasses");
-        setContentView(msgCard.toView());
 
         // Request enabling Bluetooth, if it's not on
         if(!mbtAdapter.isEnabled()) {
@@ -271,6 +104,7 @@ public class MainActivity extends Activity {
             mbtService.queryDevices();
         }
     }
+
     /**
      * On Resume (Activity visible, not in foreground)
      * Start connection
@@ -279,11 +113,13 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         Log.v(TAG, "On Resume");
+
         // Starting connection with mbtService
         // if successful ConnectedThread will start
         // (called from within ConnectThread.run) that manages the connection
         mbtService.connect();
     }
+
     /**
      * On Pause (Activity is not in foreground)
      */
@@ -292,6 +128,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Pause");
         super.onPause();
     }
+
     /**
      * On Stop (Activity not longer visible)
      */
@@ -303,7 +140,7 @@ public class MainActivity extends Activity {
         // activity not longer visible
         // stop all threads which also close the sockets
         if(mbtService != null) {
-            mbtService.stopThreads();
+            // *** FIX mbtService.stopThreads();
         }
     }
 
@@ -317,28 +154,7 @@ public class MainActivity extends Activity {
      * @param msg Message from Android Phone
      */
     void updateCard(int msg, int index) {
-        //ArrayList<MenuOption> temp = new ArrayList();
-        String here = "Enter Update Card Function";
-        Log.v(TAG,here);
-        index--;
-        String logInt = "Index: "+ Integer.toString(index);
-        Log.v(TAG, logInt);
-        if(msg == 1){
-            if(gList.getList().get(index).nextMenu != null){
-                gList.setList(gList.getList().get(index).nextMenu);
-                //Log.v(TAG,"Current List: " +currentList.get(0).displayText);
-                mCard.setText(gList.getList().get(0).displayText);
-            }
-        }
-        else{
-            if(gList.getList().get(index).parent != null){
-                gList.setList(gList.getList().get(index).parent);
-                mCard.setText(gList.getList().get(0).displayText);
-                //currentList = currentList.get(index).parent;
-            }
-        }
-        setContentView(mCard.toView());
-        //return currentList;
+        //
     }
 
     /**
@@ -368,6 +184,7 @@ public class MainActivity extends Activity {
                             break;
                     }
                     break;
+
                 // in case this activity received a string message from phone
                 case MESSAGE_INCOMING:
                     Log.v(TAG, "message income");
@@ -377,15 +194,19 @@ public class MainActivity extends Activity {
                     // display message on card
                     // updateCard(msgFromPhone);
                     break;
+
                 // user commands that manipulate glass timeline
                 //TODO on those commands invoke some kind of simulated Inputs
+
                 case COMMAND_OK:
                     Log.v(TAG, "Command ok");
-                    updateCard(1,index);
+
+                    // need to change ScrollView to next hierarchy, use map for cardID to ScrollView to achieve this
+
                     break;
-                case COMMAND_BACK:
-                    Log.v(TAG, "Command back");
-                    updateCard(2,index);
+                default:
+                    // something went wrong...
+
                     break;
             }
         }

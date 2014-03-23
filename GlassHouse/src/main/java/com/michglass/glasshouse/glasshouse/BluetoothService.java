@@ -1,4 +1,4 @@
-package com.mglass.alphagraceapp.app;
+package com.michglass.glasshouse.glasshouse;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;

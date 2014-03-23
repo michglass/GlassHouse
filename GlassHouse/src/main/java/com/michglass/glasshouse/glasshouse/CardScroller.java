@@ -44,6 +44,8 @@ public class CardScroller extends CardScrollAdapter {
             mCardList.add(currCard);
         }
     }
+
+
     /**
      * Creates a list of Cards from a list of persons
      * @param messages List of messages that are going to be displayed in a ScrollView
@@ -60,13 +62,14 @@ public class CardScroller extends CardScrollAdapter {
             mCardList.add(currCard);
         }
     }
+
     /**
      * Set and get the card list
      */
-    public void setmCardList(ArrayList<Card> cards) {
+    public void setCardList(ArrayList<Card> cards) {
         this.mCardList = cards;
     }
-    public ArrayList<Card> getmCardList() {
+    public ArrayList<Card> getCardList() {
         return this.mCardList;
     }
 
