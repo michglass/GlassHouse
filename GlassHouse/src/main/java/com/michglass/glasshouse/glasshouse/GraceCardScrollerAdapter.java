@@ -14,64 +14,30 @@ import java.util.ArrayList;
  *  Created By Oliver
  *  Date: 02/20/2014
  */
-public class CardScroller extends CardScrollAdapter {
+public class GraceCardScrollerAdapter extends CardScrollAdapter {
 
     // Debug
     private static final String TAG = "Card Scroll";
 
     // list of Cards
-    private ArrayList<Card> mCardList = new ArrayList<Card>();
+    private ArrayList<GraceCard> mCardList = new ArrayList<GraceCard>();
 
     // Constructor
-    public CardScroller() {
+    public GraceCardScrollerAdapter() {
         super();
     }
 
-    /**
-     * Creates a list of Cards from a list of persons
-     * @param personNames names of persons
-     * @param context Activity where Cards will be displayed
-     * @param b dummy boolean so createCards can be overloaded
-     */
-    public void createCards(ArrayList<String> personNames, Context context, boolean b) {
-        Log.v(TAG, "Create Cards");
-        // placeholder card
-        Card currCard;
-        for(String name: personNames) {
-            currCard = new Card(context);
-            currCard.setText(name);
-            // currCard.addImage(R.drawable.sample_img);
-            mCardList.add(currCard);
-        }
-    }
-
-
-    /**
-     * Creates a list of Cards from a list of persons
-     * @param messages List of messages that are going to be displayed in a ScrollView
-     * @param context Activity where Cards will be displayed
-     */
-    public void createCards(ArrayList<String> messages, Context context) {
-        Log.v(TAG, "Create Cards");
-        // placeholder card
-        Card currCard;
-        for(String msg: messages) {
-            currCard = new Card(context);
-            currCard.setText(msg);
-            // currCard.addImage(R.drawable.sample_img);
-            mCardList.add(currCard);
-        }
+    public void addGraceCard(GraceCard card) {
+        mCardList.add(card);
     }
 
     /**
      * Set and get the card list
      */
-    public void setCardList(ArrayList<Card> cards) {
+    public void setCardList(ArrayList<GraceCard> cards) {
         this.mCardList = cards;
     }
-    public ArrayList<Card> getCardList() {
-        return this.mCardList;
-    }
+    public ArrayList<GraceCard> getCardList() { return this.mCardList; }
 
     /*
         Adapter Methods
