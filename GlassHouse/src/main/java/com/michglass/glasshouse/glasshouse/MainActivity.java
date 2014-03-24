@@ -13,21 +13,25 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 
 import com.google.android.glass.app.Card;
 
 
 
 import com.google.android.glass.app.Card;
+import com.google.android.glass.widget.CardScrollView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends Activity {
-
-    private Card mCard = new Card(this);
-    private Handler handler = new Handler();
 
     // Debug
     private static final String TAG = "Main Activity";
@@ -42,13 +46,44 @@ public class MainActivity extends Activity {
     // messages from BT service
     public static final int MESSAGE_STATE_CHANGE = 3; // indicates connection state change (debug)
     public static final int MESSAGE_INCOMING = 4; // message with string content (only for debug)
-
     public static final int COMMAND_OK = 1;
+
+    private CardScrollView mCardScrollView;
+    private Gestures mGestures;
+    private Slider mCurrentSlider;
+
+    private GraceCardScrollerAdapter mBaseCardsAdapter;
+    private GraceCardScrollerAdapter mMediaCardsAdapter;
+    private GraceCardScrollerAdapter mPostMediaCardsAdapter;
+    private GraceCardScrollerAdapter mCommContactsAdapter;
+    private GraceCardScrollerAdapter mCommMessagesAdapter;
+    private GraceCardScrollerAdapter mGameCardsAdapter;
+    private GraceCardScrollerAdapter mCurrentAdapter;
+
+    private static final String MEDIA = "Media";
+    private static final String COMM = "Comm";
+    private static final String GAMES = "Games";
+    private static final String CAMERA = "Camera";
+    private static final String VIDEO = "Video";
+    private static final String REDO = "Redo";
+    private static final String SAVE = "Save";
+    private static final String SEND = "Send";
+    private static final String BACK = "Back";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "On Create");
+
+        // initialize all hierarchy adapters and add cards to them
+        buildScrollers();
+        mCurrentAdapter = mBaseCardsAdapter;
+
+        mCardScrollView = new CardScrollView(this);
+        mCardScrollView.setAdapter(mBaseCardsAdapter);
+
+        mGestures = new Gestures();
+        mCurrentSlider = new Slider(mCardScrollView.getCount());
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -59,7 +94,50 @@ public class MainActivity extends Activity {
             finish();
         }
 
-        runnable.run();
+        mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
+                mCurrentAdapter = graceCard.getAdapter();
+                mCardScrollView.setAdapter(mCurrentAdapter);
+                mCurrentSlider.stop();
+                mCurrentSlider = new Slider(mCurrentAdapter.getCount());
+                mCurrentAdapter.notifyDataSetChanged();
+                setContentView(mCardScrollView); // this might not be necessary
+                mCurrentSlider.run();
+            }
+        });
+
+        setContentView(mCardScrollView);
+        mCurrentSlider.run();
+    }
+
+    // create cards for each hierarchy, add to that's hierarchies adapter
+    void buildScrollers() {
+        mBaseCardsAdapter = new GraceCardScrollerAdapter();
+        mBaseCardsAdapter.addGraceCard(new GraceCard(this, mMediaCardsAdapter, MEDIA));
+        mBaseCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, COMM));
+        mBaseCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, GAMES));
+
+        mMediaCardsAdapter = new GraceCardScrollerAdapter();
+        mMediaCardsAdapter.addGraceCard(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
+        mMediaCardsAdapter.addGraceCard(new GraceCard(this, mPostMediaCardsAdapter, VIDEO));
+        mMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, BACK));
+
+        mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
+        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mMediaCardsAdapter, REDO));
+        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, SAVE));
+        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, SEND));
+        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, BACK));
+
+        /* **** below needs to be implemented still */
+
+        // communication hierarchy
+        mCommContactsAdapter = new GraceCardScrollerAdapter();
+        mCommMessagesAdapter = new GraceCardScrollerAdapter();
+
+        // game hierarchy
+        mGameCardsAdapter = new GraceCardScrollerAdapter();
     }
 
     @Override
@@ -72,18 +150,54 @@ public class MainActivity extends Activity {
         }
     }
 
-    private Runnable runnable = new Runnable() {
+    // this class is responsible for the right-to-left & left-to-right "sliding" of the cards
+    private class Slider implements Runnable {
+
+        int mCurrPosition;
+        int mFinalPosition;
+        boolean swipeRight;
+        boolean swipeLeft;
+        boolean stop;
+
+        public Slider(int numCards) {
+            mCurrPosition = 0;
+            mFinalPosition = numCards - 1;
+            swipeRight = true;
+            swipeLeft = false;
+            stop = false;
+        }
+
         @Override
         public void run() {
-            //Debugging
-            Log.v(TAG, "inside void run()");
 
-            setContentView(mCard.toView());
+            stop = false;
 
-            /* and here comes the "trick" */
-            handler.postDelayed(this, 5000);
+            if(!stop) {
+
+                if(swipeRight) {
+                    mGestures.createGesture(Gestures.TYPE_SWIPE_RIGHT);
+                    mCurrPosition++;
+                } else if(swipeLeft) {
+                    mGestures.createGesture(Gestures.TYPE_SWIPE_LEFT);
+                    mCurrPosition--;
+                }
+
+                if(mCurrPosition == 0) {
+                    swipeRight = true;
+                    swipeLeft = false;
+                } else if(mCurrPosition == mFinalPosition) {
+                    swipeLeft = true;
+                    swipeRight = false;
+                }
+
+                mHandler.postDelayed(this, 3000);
+            }
         }
-    };
+
+        public void stop() {
+            stop = true;
+        }
+    }
 
     //From GlassBluetooth
 
@@ -100,7 +214,8 @@ public class MainActivity extends Activity {
         } else {
             Log.v(TAG, "Bluetooth already enabled"); // usually on Glass
             // find device Glass should be paired to
-            mbtService = new BluetoothService(mHandler); // set up bluetooth service
+            // mbtService = new BluetoothService(mHandler); // set up bluetooth service
+            mbtService = new BluetoothService(); // set up bluetooth service
             mbtService.queryDevices();
         }
     }
@@ -142,19 +257,6 @@ public class MainActivity extends Activity {
         if(mbtService != null) {
             // *** FIX mbtService.stopThreads();
         }
-    }
-
-    /**
-     * Util Functions
-     */
-
-    /**
-     * Update Cards
-     * Sets new Text on Card
-     * @param msg Message from Android Phone
-     */
-    void updateCard(int msg, int index) {
-        //
     }
 
     /**
