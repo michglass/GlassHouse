@@ -1,18 +1,25 @@
 package com.michglass.glasshouse.glasshouse;
 
 /**
- * Created by vbganesh on 2/26/14.
+ * Created by Vijay Ganesh
+ * Date: 2/26/14
  */
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.FileObserver;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -30,21 +37,16 @@ public class MainActivity extends Activity {
     // Debug
     private static final String TAG = "Main Activity";
 
-    // Bluetooth Vars
-    private BluetoothAdapter mbtAdapter;
-    private BluetoothService mbtService;
-
-    // Request Variables
-    private static final int REQUEST_ENABLE_BT = 1;
-
-    // messages from BT service
-    public static final int MESSAGE_STATE_CHANGE = 3; // indicates connection state change (debug)
-    public static final int MESSAGE_INCOMING = 4; // message with string content (only for debug)
+    // Messages from BT
     private static final int CAMERA_REQ = 5;
     private static final int VIDEO_REQ = 6;
 
-    public static final int COMMAND_OK = 1;
+    // BT Variables
+    private Messenger mBluetoothServiceMessenger;
+    private boolean mBound;
+    private final Messenger clientMessenger = new Messenger(new ServiceHandler());
 
+    // UI Variables
     private CardScrollView mCardScrollView;
     private Gestures mGestures;
     private Slider mCurrentSlider;
@@ -68,10 +70,22 @@ public class MainActivity extends Activity {
     private static final String SEND = "Send";
     private static final String BACK = "Back";
 
+
+    /**
+     * Activity Lifecycle Methods
+     * On Create: Start BT(only in one Activity)
+     * On Start: Bind to BT
+     * On Stop: Unbind from BT
+     * On Destroy: Stop BT(only in one Activity)
+     */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "On Create");
+
+        // Start the BT Service
+        startService(new Intent(this, BluetoothService.class));
 
         // initialize all hierarchy adapters and add cards to them
         buildScrollers();
@@ -86,12 +100,6 @@ public class MainActivity extends Activity {
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        this.mbtAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mbtAdapter == null) {
-            Log.v(TAG, "BT not supported");
-            finish();
-        }
 
         // implement any specific card behavior here, wrap it in a class though so this function isn't huge
         mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -136,9 +144,40 @@ public class MainActivity extends Activity {
         setContentView(mCardScrollView);
         mCurrentSlider.run();
     }
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.v(TAG, "On Start");
+
+        // Bind this Activity to the BT Service
+        if(!mBound) {
+            bindService(new Intent(this, BluetoothService.class), mConnection,
+                    Context.BIND_AUTO_CREATE);
+        }
+    }
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.v(TAG, "On Stop");
+
+        // Unbind from BT Service
+        if(mBound) {
+            sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
+            unbindService(mConnection);
+            mBound = false;
+        }
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.v(TAG, "On Destroy");
+
+        // Stop the BT Service only in the component that calls startservice() !!
+        stopService(new Intent(this, BluetoothService.class));
+    }
 
     // create cards for each hierarchy, add to that's hierarchies adapter
-    void buildScrollers() {
+    private void buildScrollers() {
         mBaseCardsAdapter = new GraceCardScrollerAdapter();
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, COMM));
@@ -165,18 +204,11 @@ public class MainActivity extends Activity {
         mGameCardsAdapter = new GraceCardScrollerAdapter();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.v(TAG, "On Destroy");
-
-        if(mbtService != null) {
-            // *** FIX mbtService.stopThreads();
-        }
-    }
-
     // this class is responsible for the right-to-left & left-to-right "sliding" of the cards
     private class Slider implements Runnable {
+
+        // Handler for delaying the Runnable
+        private Handler mHandler;
 
         int mCurrPosition;
         int mFinalPosition;
@@ -190,12 +222,13 @@ public class MainActivity extends Activity {
             swipeRight = true;
             swipeLeft = false;
             stop = false;
+            mHandler = new Handler();
         }
 
         @Override
         public void run() {
 
-            stop = false;
+            // stop = false;
 
             if(!stop) {
 
@@ -223,121 +256,6 @@ public class MainActivity extends Activity {
             stop = true;
         }
     }
-
-    //From GlassBluetooth
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.v(TAG, "On Start");
-
-        // Request enabling Bluetooth, if it's not on
-        if(!mbtAdapter.isEnabled()) {
-            // Should always be enabled on Glass!
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        } else {
-            Log.v(TAG, "Bluetooth already enabled"); // usually on Glass
-            // find device Glass should be paired to
-            // mbtService = new BluetoothService(mHandler); // set up bluetooth service
-            mbtService = new BluetoothService(); // set up bluetooth service
-            mbtService.queryDevices();
-        }
-    }
-
-    /**
-     * On Resume (Activity visible, not in foreground)
-     * Start connection
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.v(TAG, "On Resume");
-
-        // Starting connection with mbtService
-        // if successful ConnectedThread will start
-        // (called from within ConnectThread.run) that manages the connection
-        mbtService.connect();
-    }
-
-    /**
-     * On Pause (Activity is not in foreground)
-     */
-    @Override
-    protected void onPause() {
-        Log.v(TAG, "On Pause");
-        super.onPause();
-    }
-
-    /**
-     * On Stop (Activity not longer visible)
-     */
-    @Override
-    protected void onStop() {
-        Log.v(TAG, "On Stop");
-        super.onStop();
-
-        // activity not longer visible
-        // stop all threads which also close the sockets
-        if(mbtService != null) {
-            // *** FIX mbtService.stopThreads();
-        }
-    }
-
-    /**
-     * Message Handler
-     * Receive Messages from BluetoothService about connection state
-     * Receive Messages from Connected Thread (android input)
-     */
-    private final Handler mHandler = new Handler() {
-
-        // when message gets send this method
-        // gives info to activity
-        @Override
-        public void handleMessage(Message msg) {
-
-            switch (msg.what) {
-                case MESSAGE_STATE_CHANGE:
-                    Log.v(TAG, "connection state changed");
-                    switch (msg.arg1) {
-                        case BluetoothService.STATE_CONNECTED:
-                            Log.v(TAG, "state connected");
-                            break;
-                        case BluetoothService.STATE_CONNECTING:
-                            Log.v(TAG, "state connecting");
-                            break;
-                        case BluetoothService.STATE_NONE:
-                            Log.v(TAG, "state none");
-                            break;
-                    }
-                    break;
-
-                // in case this activity received a string message from phone
-                case MESSAGE_INCOMING:
-                    Log.v(TAG, "message income");
-                    // display message on the card, null check is performed
-                    // before message gets send --> shouldn't be null
-                    // String msgFromPhone = msg.getData().getString(BluetoothService.EXTRA_MESSAGE);
-                    // display message on card
-                    // updateCard(msgFromPhone);
-                    break;
-
-                // user commands that manipulate glass timeline
-                //TODO on those commands invoke some kind of simulated Inputs
-
-                case COMMAND_OK:
-                    Log.v(TAG, "Command ok");
-
-                    // need to change ScrollView to next hierarchy, use map for cardID to ScrollView to achieve this
-
-                    break;
-                default:
-                    // something went wrong...
-
-                    break;
-            }
-        }
-    };
 
     /**
      * On Activity Result
@@ -399,5 +317,139 @@ public class MainActivity extends Activity {
     private void recordVideo() {
         Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         startActivityForResult(intent, VIDEO_REQ);
+    }
+
+    /**
+     * Bluetooth Utility Functions
+     * Service Connection for getting the Interface between Activity and Service
+     * Send Message To Service
+     * Set Up Message (First contact with Service)
+     * Message Handler (Handling incoming messages from the Service)
+     */
+
+    /**
+     * ServiceConnection
+     * Callback Methods that get called when Client binds to Service
+     */
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.v(TAG, "On Service Connect");
+
+            // set up messenger
+            mBluetoothServiceMessenger = new Messenger(iBinder);
+            mBound = true;
+
+            setUpMessage();
+        }
+        /**
+         * Only called when Service unexpectedly disconnected!!
+         */
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.v(TAG, "On Service Disconnect");
+            mBound = false;
+        }
+    };
+    /**
+     * Send Message To Service
+     * Sends a message over the Service to Android
+     * @param messageType Type of message (int, String, Bitmap)
+     * @param message Message body
+     */
+    public void sendMessageToService(int messageType, Object message) {
+        Message msg = new Message();
+
+        switch (messageType) {
+            case BluetoothService.INT_MESSAGE:
+                int intMsg = (Integer) message;
+                msg.what = intMsg;
+                break;
+            case BluetoothService.TEXT_MESSAGE:
+                msg.what = BluetoothService.TEXT_MESSAGE;
+                msg.obj = message;
+                break;
+            case BluetoothService.PICTURE_MESSAGE:
+                msg.what = BluetoothService.PICTURE_MESSAGE;
+                msg.obj = message;
+                break;
+        }
+
+        try {
+            Log.v(TAG, "Try contacting Service");
+            mBluetoothServiceMessenger.send(msg);
+        } catch (RemoteException remE) {
+            Log.e(TAG, "Couldn't contact Service", remE);
+        }
+    }
+    /**
+     * Set Up Message
+     * First contact with Service
+     * Has to be send!
+     * (with clientMessenger in replyTo Param so Service can respond to client)
+     */
+    public void setUpMessage() {
+        Message startMsg = new Message();
+        startMsg.what = BluetoothService.REGISTER_CLIENT;
+        startMsg.replyTo = clientMessenger;
+
+        try {
+            Log.v(TAG, "First time contact to service");
+            mBluetoothServiceMessenger.send(startMsg);
+        } catch (RemoteException remE) {
+            Log.e(TAG, "Couldn't contact Service", remE);
+        }
+    }
+    /**
+     * Message Handler
+     * Handles incoming messages from Service
+     * Messages wrt Android Input or Connection State
+     */
+    public class ServiceHandler extends Handler {
+
+        // when message gets send this method
+        // gives info to activity
+        @Override
+        public void handleMessage(Message msg) {
+
+            switch (msg.what) {
+                case BluetoothService.MESSAGE_STATE_CHANGE:
+                    Log.v(TAG, "connection state changed");
+                    switch (msg.arg1) {
+                        case BluetoothService.STATE_CONNECTED:
+                            Log.v(TAG, "state connected");
+                            break;
+                        case BluetoothService.STATE_CONNECTING:
+                            Log.v(TAG, "state connecting");
+                            break;
+                        case BluetoothService.STATE_NONE:
+                            Log.v(TAG, "state none");
+                            break;
+                    }
+                    break;
+                // in case this activity received a string message from phone
+                case BluetoothService.MESSAGE_INCOMING:
+                    Log.v(TAG, "message income");
+                    break;
+                case BluetoothService.COMMAND_OK:
+                    Log.v(TAG, "Command ok");
+                    //TODO Do something on OK
+                    break;
+                case BluetoothService.COMMAND_BACK:
+                    Log.v(TAG, "Command back");
+                    //TODO Do something on BACK
+                    break;
+                case BluetoothService.ANDROID_STOPPED:
+                    Log.v(TAG, "Android App closed");
+                    // mbtService.setState(BluetoothService.STATE_NONE);
+                    finish(); // close this application if Android application is down
+                    break;
+                case BluetoothService.MESSAGE_CONNECTION_FAILED:
+                    Log.v(TAG, "Failed Conn App Closing");
+                    // mbtService.setState(BluetoothService.STATE_NONE);
+                    finish();
+                    break;
+            }
+        }
     }
 }
