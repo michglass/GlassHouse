@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.FileObserver;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
@@ -21,6 +22,8 @@ import android.widget.Toast;
 
 
 import com.google.android.glass.widget.CardScrollView;
+
+import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -370,7 +373,7 @@ public class MainActivity extends Activity {
             {
                 // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
                 Uri videoLocation = intent.getData();
-                Bitmap screenshot = (Bitmap) ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
+                Bitmap screenshot = ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
                 insertScreenshotIntoPostMediaMenu(screenshot, videoLocation);
                 break;
             }
@@ -389,21 +392,12 @@ public class MainActivity extends Activity {
     }
 
     private void takePicture() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-
-            startActivityForResult(takePictureIntent, CAMERA_REQ);
-        }
-        else
-            Toast.makeText(this, "Could not resolve image capture activity!", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(intent, CAMERA_REQ);
     }
 
     private void recordVideo() {
-        Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-        if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takeVideoIntent, VIDEO_REQ);
-        }
-        else
-            Toast.makeText(this, "Could not resolve video capture activity!", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        startActivityForResult(intent, VIDEO_REQ);
     }
 }
