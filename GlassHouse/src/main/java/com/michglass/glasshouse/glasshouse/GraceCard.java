@@ -1,6 +1,7 @@
 package com.michglass.glasshouse.glasshouse;
 
 import android.content.Context;
+import android.net.Uri;
 
 import com.google.android.glass.app.Card;
 
@@ -19,5 +20,10 @@ public class GraceCard extends Card {
 
     public GraceCardScrollerAdapter getAdapter() {
         return adapter;
+    }
+
+    public Card addImage (Uri uri) {
+        super.addImage(uri);
+        return this;
     }
 }

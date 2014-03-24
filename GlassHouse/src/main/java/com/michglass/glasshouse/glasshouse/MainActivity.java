@@ -6,30 +6,21 @@ package com.michglass.glasshouse.glasshouse;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-
-import com.google.android.glass.app.Card;
-
+import android.widget.Toast;
 
 
-import com.google.android.glass.app.Card;
 import com.google.android.glass.widget.CardScrollView;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends Activity {
 
@@ -46,11 +37,15 @@ public class MainActivity extends Activity {
     // messages from BT service
     public static final int MESSAGE_STATE_CHANGE = 3; // indicates connection state change (debug)
     public static final int MESSAGE_INCOMING = 4; // message with string content (only for debug)
+    private static final int CAMERA_REQ = 5;
+    private static final int VIDEO_REQ = 6;
+
     public static final int COMMAND_OK = 1;
 
     private CardScrollView mCardScrollView;
     private Gestures mGestures;
     private Slider mCurrentSlider;
+    private Media mMedia;
 
     private GraceCardScrollerAdapter mBaseCardsAdapter;
     private GraceCardScrollerAdapter mMediaCardsAdapter;
@@ -82,6 +77,7 @@ public class MainActivity extends Activity {
         mCardScrollView = new CardScrollView(this);
         mCardScrollView.setAdapter(mBaseCardsAdapter);
 
+        mMedia = new Media();
         mGestures = new Gestures();
         mCurrentSlider = new Slider(mCardScrollView.getCount());
 
@@ -94,16 +90,34 @@ public class MainActivity extends Activity {
             finish();
         }
 
+        // implement any specific card behavior here, wrap it in a class though so this function isn't huge
         mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
-                mCurrentAdapter = graceCard.getAdapter();
-                mCardScrollView.setAdapter(mCurrentAdapter);
+
+                // null adapter means this card has no tap event so do nothing
+                if (graceCard.getAdapter() == null)
+                    return;
+
+                final String cardText = graceCard.getText();
+                if (cardText.equals(CAMERA)) {
+                    takePicture();
+                } else if (cardText.equals(VIDEO)) {
+                    recordVideo();
+                }
+
+                // kill "old" slider and replace with a new one for our new hierarchy
                 mCurrentSlider.stop();
                 mCurrentSlider = new Slider(mCurrentAdapter.getCount());
+
+                // switch out cards being displayed
+                mCurrentAdapter = graceCard.getAdapter();
+                mCardScrollView.setAdapter(mCurrentAdapter);
+
+                // visual switch of hierarchy and start our slider
                 mCurrentAdapter.notifyDataSetChanged();
-                setContentView(mCardScrollView); // this might not be necessary
                 mCurrentSlider.run();
             }
         });
@@ -115,20 +129,20 @@ public class MainActivity extends Activity {
     // create cards for each hierarchy, add to that's hierarchies adapter
     void buildScrollers() {
         mBaseCardsAdapter = new GraceCardScrollerAdapter();
-        mBaseCardsAdapter.addGraceCard(new GraceCard(this, mMediaCardsAdapter, MEDIA));
-        mBaseCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, COMM));
-        mBaseCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, GAMES));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, COMM));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, GAMES));
 
         mMediaCardsAdapter = new GraceCardScrollerAdapter();
-        mMediaCardsAdapter.addGraceCard(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
-        mMediaCardsAdapter.addGraceCard(new GraceCard(this, mPostMediaCardsAdapter, VIDEO));
-        mMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, BACK));
+        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
+        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, VIDEO));
+        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
 
         mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
-        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mMediaCardsAdapter, REDO));
-        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, SAVE));
-        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, SEND));
-        mPostMediaCardsAdapter.addGraceCard(new GraceCard(this, mBaseCardsAdapter, BACK));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, REDO));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
 
         /* **** below needs to be implemented still */
 
@@ -321,15 +335,67 @@ public class MainActivity extends Activity {
      * @param resultCode Code that indicates if Bluetooth connection was established
      */
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         // shouldn't be called, because Bluetooth should be enabled on Glass
+
+        if (resultCode != RESULT_OK)
+            return;
+
         switch (resultCode) {
 
             case RESULT_OK:
                 Log.v(TAG, "Bluetooth Success");
-                return;
+                break;
             case RESULT_CANCELED:
                 Log.v(TAG, "Bluetooth Failed");
+                break;
+            case CAMERA_REQ:
+            {
+                // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
+                Uri imageLocation = intent.getData();
+                Bundle extras = intent.getExtras();
+                Bitmap screenshot = (Bitmap) extras.get("image");
+                insertScreenshotIntoPostMedia(screenshot, imageLocation);
+                break;
+            }
+            case VIDEO_REQ:
+            {
+                // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
+                Uri videoLocation = intent.getData();
+                Bitmap screenshot = (Bitmap) ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
+                insertScreenshotIntoPostMedia(screenshot, videoLocation);
+                break;
+            }
+            default:
         }
+    }
+
+    // Utility functions
+
+    private void insertScreenshotIntoPostMedia(Bitmap screenshot, Uri mediaLocation) {
+        mMedia.addMedia(screenshot, mediaLocation);
+        GraceCard screenshotCard = new GraceCard(this, null, "");
+        screenshotCard.addImage(mediaLocation);
+        mPostMediaCardsAdapter.pushCardFront(screenshotCard);
+        mPostMediaCardsAdapter.notifyDataSetChanged();
+    }
+
+    private void takePicture() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+
+            startActivityForResult(takePictureIntent, CAMERA_REQ);
+        }
+        else
+            Toast.makeText(this, "Could not resolve image capture activity!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void recordVideo() {
+        Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takeVideoIntent, VIDEO_REQ);
+        }
+        else
+            Toast.makeText(this, "Could not resolve video capture activity!", Toast.LENGTH_SHORT).show();
     }
 }

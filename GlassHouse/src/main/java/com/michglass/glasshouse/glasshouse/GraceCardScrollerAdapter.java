@@ -27,9 +27,8 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
         super();
     }
 
-    public void addGraceCard(GraceCard card) {
-        mCardList.add(card);
-    }
+    public void pushCardBack(GraceCard card) { mCardList.add(card); }
+    public void pushCardFront(GraceCard card) { mCardList.add(0, card);}
 
     /**
      * Set and get the card list
