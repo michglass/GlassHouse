@@ -101,11 +101,19 @@ public class MainActivity extends Activity {
                 if (graceCard.getAdapter() == null)
                     return;
 
+                // long ass switch for cards that have functions
                 final String cardText = graceCard.getText();
                 if (cardText.equals(CAMERA)) {
                     takePicture();
                 } else if (cardText.equals(VIDEO)) {
                     recordVideo();
+                } else if (cardText.equals(REDO)) {
+                    // remove screenshot
+                    mPostMediaCardsAdapter.popCardFront();
+                } else if (cardText.equals(SAVE)) {
+                    // save to disk, or whatever
+                } else if (cardText.equals(SEND)) {
+                    // launch contacts picker, send to phone or whatever
                 }
 
                 // kill "old" slider and replace with a new one for our new hierarchy
