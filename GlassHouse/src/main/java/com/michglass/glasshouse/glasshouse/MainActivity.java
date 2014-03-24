@@ -7,10 +7,8 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.FileObserver;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
@@ -18,12 +16,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.widget.Toast;
+import android.provider.MediaStore.*;
 
-
+import com.google.android.glass.media.CameraManager;
 import com.google.android.glass.widget.CardScrollView;
-
-import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -46,7 +42,6 @@ public class MainActivity extends Activity {
     public static final int COMMAND_OK = 1;
 
     private CardScrollView mCardScrollView;
-    private Gestures mGestures;
     private Slider mCurrentSlider;
     private Media mMedia;
 
@@ -81,8 +76,7 @@ public class MainActivity extends Activity {
         mCardScrollView.setAdapter(mBaseCardsAdapter);
 
         mMedia = new Media();
-        mGestures = new Gestures();
-        mCurrentSlider = new Slider(mCardScrollView.getCount());
+        mCurrentSlider = new Slider(mCardScrollView.getCount(), mHandler);
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -121,7 +115,7 @@ public class MainActivity extends Activity {
 
                 // kill "old" slider and replace with a new one for our new hierarchy
                 mCurrentSlider.stop();
-                mCurrentSlider = new Slider(mCurrentAdapter.getCount());
+                mCurrentSlider = new Slider(mCurrentAdapter.getCount(), mHandler);
 
                 // switch out cards being displayed
                 mCurrentAdapter = graceCard.getAdapter();
@@ -138,7 +132,7 @@ public class MainActivity extends Activity {
     }
 
     // create cards for each hierarchy, add to that's hierarchies adapter
-    void buildScrollers() {
+    private void buildScrollers() {
         mBaseCardsAdapter = new GraceCardScrollerAdapter();
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, COMM));
@@ -172,55 +166,6 @@ public class MainActivity extends Activity {
 
         if(mbtService != null) {
             // *** FIX mbtService.stopThreads();
-        }
-    }
-
-    // this class is responsible for the right-to-left & left-to-right "sliding" of the cards
-    private class Slider implements Runnable {
-
-        int mCurrPosition;
-        int mFinalPosition;
-        boolean swipeRight;
-        boolean swipeLeft;
-        boolean stop;
-
-        public Slider(int numCards) {
-            mCurrPosition = 0;
-            mFinalPosition = numCards - 1;
-            swipeRight = true;
-            swipeLeft = false;
-            stop = false;
-        }
-
-        @Override
-        public void run() {
-
-            stop = false;
-
-            if(!stop) {
-
-                if(swipeRight) {
-                    mGestures.createGesture(Gestures.TYPE_SWIPE_RIGHT);
-                    mCurrPosition++;
-                } else if(swipeLeft) {
-                    mGestures.createGesture(Gestures.TYPE_SWIPE_LEFT);
-                    mCurrPosition--;
-                }
-
-                if(mCurrPosition == 0) {
-                    swipeRight = true;
-                    swipeLeft = false;
-                } else if(mCurrPosition == mFinalPosition) {
-                    swipeLeft = true;
-                    swipeRight = false;
-                }
-
-                mHandler.postDelayed(this, 3000);
-            }
-        }
-
-        public void stop() {
-            stop = true;
         }
     }
 
@@ -365,7 +310,8 @@ public class MainActivity extends Activity {
                 // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
                 Uri imageLocation = intent.getData();
                 Bundle extras = intent.getExtras();
-                Bitmap screenshot = (Bitmap) extras.get("image");
+                Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                // Bitmap screenshot = (Bitmap) extras.get("image");
                 insertScreenshotIntoPostMediaMenu(screenshot, imageLocation);
                 break;
             }
@@ -373,7 +319,9 @@ public class MainActivity extends Activity {
             {
                 // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
                 Uri videoLocation = intent.getData();
-                Bitmap screenshot = ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
+                // Bitmap screenshot = ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
+                Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                Video video = (Video) intent.getExtras().get(CameraManager.EXTRA_VIDEO_FILE_PATH);
                 insertScreenshotIntoPostMediaMenu(screenshot, videoLocation);
                 break;
             }

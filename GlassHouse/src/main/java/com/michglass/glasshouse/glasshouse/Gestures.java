@@ -49,48 +49,6 @@ public class Gestures {
         instrThread = new InstThread(new Instrumentation());
         instrThread.start();
     }
-    /**
-     * Swipe Loop
-     * Runnable for swiping through a card scroll view
-     * @param size Size of the CardScrollView
-     */
-    public Runnable swipeLoop(int size) {
-        mCurrPosition = 0;
-        mFinalPosition = size - 1;
-
-        return new Runnable() {
-            boolean swipeRight = true;
-            boolean swipeLeft = false;
-            @Override
-            public void run() {
-                Log.v(TAG, "Runnable Run");
-                Log.v(TAG, "keep runn: " + mKeepRunning);
-                if(mKeepRunning) {
-
-                    Log.v(TAG, "Swipe Loop");
-                    if(swipeRight) {
-                        createGesture(Gestures.TYPE_SWIPE_RIGHT);
-                        mCurrPosition++;
-                    } else if(swipeLeft) {
-                        createGesture(Gestures.TYPE_SWIPE_LEFT);
-                        mCurrPosition--;
-                    }
-
-                    if(mCurrPosition == 0) {
-                        swipeRight = true;
-                        swipeLeft = false;
-                    }
-                    if(mCurrPosition == mFinalPosition) {
-                        swipeLeft = true;
-                        swipeRight = false;
-                    }
-
-                    mHandler.postDelayed(this, 3000);
-                }
-                mKeepRunning = true;
-            }
-        };
-    }
 
     /**
      * Methods that simulate the different gestures
