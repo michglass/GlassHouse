@@ -108,12 +108,12 @@ public class MainActivity extends Activity {
                 } else if (cardText.equals(VIDEO)) {
                     recordVideo();
                 } else if (cardText.equals(REDO)) {
-                    // remove screenshot
+                    // remove screenshot from post media menu cards
                     mPostMediaCardsAdapter.popCardFront();
                 } else if (cardText.equals(SAVE)) {
                     // save to disk, or whatever
                 } else if (cardText.equals(SEND)) {
-                    // launch contacts picker, send to phone or whatever
+                    // launch contacts picker, send media to phone or whatever
                 }
 
                 // kill "old" slider and replace with a new one for our new hierarchy
@@ -148,8 +148,8 @@ public class MainActivity extends Activity {
 
         mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, REDO));
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE));
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE)); // loop back to main menu for now
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND)); // loop back to main menu for now
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
 
         /* **** below needs to be implemented still */
@@ -363,7 +363,7 @@ public class MainActivity extends Activity {
                 Uri imageLocation = intent.getData();
                 Bundle extras = intent.getExtras();
                 Bitmap screenshot = (Bitmap) extras.get("image");
-                insertScreenshotIntoPostMedia(screenshot, imageLocation);
+                insertScreenshotIntoPostMediaMenu(screenshot, imageLocation);
                 break;
             }
             case VIDEO_REQ:
@@ -371,7 +371,7 @@ public class MainActivity extends Activity {
                 // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
                 Uri videoLocation = intent.getData();
                 Bitmap screenshot = (Bitmap) ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
-                insertScreenshotIntoPostMedia(screenshot, videoLocation);
+                insertScreenshotIntoPostMediaMenu(screenshot, videoLocation);
                 break;
             }
             default:
@@ -380,7 +380,7 @@ public class MainActivity extends Activity {
 
     // Utility functions
 
-    private void insertScreenshotIntoPostMedia(Bitmap screenshot, Uri mediaLocation) {
+    private void insertScreenshotIntoPostMediaMenu(Bitmap screenshot, Uri mediaLocation) {
         mMedia.addMedia(screenshot, mediaLocation);
         GraceCard screenshotCard = new GraceCard(this, null, "");
         screenshotCard.addImage(mediaLocation);
