@@ -247,35 +247,35 @@ public class MainActivity extends Activity {
         mCommContactsAdapter = new GraceCardScrollerAdapter();
         mCommMessagesAdapter = new GraceCardScrollerAdapter();
 
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, COMM));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, GAMES));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Play a Game", GraceCardType.GAMES));
 
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, VIDEO));
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
+        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
+        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Record a Video", GraceCardType.VIDEO));
+        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
 
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, REDO));
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE)); // loop back to main menu for now
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND)); // loop back to main menu for now
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Redo", GraceCardType.REDO));
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Save Media", GraceCardType.SAVE)); // loop back to main menu for now
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Send Media",GraceCardType.SEND)); // loop back to main menu for now
+        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
         Log.v(TAG, "Post MEdia Adapter Built");
 
         /* **** below needs to be implemented still */
 
         // communication hierarchy
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032");
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128");
-        Log.v(TAG, "Right before loop to add contacts to adapter")
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128", GraceCardType.CONTACT);
+        Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
 ;        for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
             Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
         }
 
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry");
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty");
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help");
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help", GraceCardType.MESSAGE);
         for(GraceMessageCard M: GraceMessageCard.messageList){
             mCommMessagesAdapter.pushCardBack(M);
             Log.v(TAG, "Message added to Adapter: " + M.Message);
@@ -398,7 +398,7 @@ public class MainActivity extends Activity {
 
     private void insertScreenshotIntoPostMediaMenu(Bitmap screenshot, Uri mediaLocation) {
 //        mMedia.addMedia(screenshot, mediaLocation);
-        GraceCard screenshotCard = new GraceCard(this, null, "");
+        GraceCard screenshotCard = new GraceCard(this, null, "", GraceCardType.SCREENSHOT);
         screenshotCard.addImage(mediaLocation);
         mPostMediaCardsAdapter.pushCardFront(screenshotCard);
     }

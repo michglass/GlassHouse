@@ -11,17 +11,22 @@ import com.google.android.glass.app.Card;
 public class GraceCard extends Card {
 
     final private GraceCardScrollerAdapter adapter;
+    private GraceCardType cardType;
 
-    public GraceCard(Context context, GraceCardScrollerAdapter adapter, String name) {
+    public GraceCard(Context context, GraceCardScrollerAdapter adapter, String name, GraceCardType cardType) {
         super(context);
         super.setText(name);
         this.adapter = adapter;
+        this.cardType = cardType;
     }
 
     public GraceCardScrollerAdapter getAdapter() {
         return adapter;
     }
 
+    public GraceCardType getGraceCardType(){
+        return cardType;
+    }
     public Card addImage (Uri uri) {
         super.addImage(uri);
         return this;
