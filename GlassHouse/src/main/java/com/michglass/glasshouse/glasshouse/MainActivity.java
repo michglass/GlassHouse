@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
 
     // UI Variables
     private CardScrollView mCardScrollView;
-    private Gestures mGestures;
+    private Gestures mCurrGestures;
     private Slider mCurrentSlider;
     private Media mMedia;
 
@@ -93,10 +93,14 @@ public class MainActivity extends Activity {
 
         mCardScrollView = new CardScrollView(this);
         mCardScrollView.setAdapter(mBaseCardsAdapter);
+        mCardScrollView.activate(); // makes it work
 
         mMedia = new Media();
-        mGestures = new Gestures();
-        mCurrentSlider = new Slider(mCardScrollView.getCount());
+        mCurrGestures = new Gestures();
+        mCurrentSlider = new Slider(mBaseCardsAdapter.getCount());
+        Log.v(TAG, "Scroll View Size: " + mCardScrollView.getCount());
+        Log.v(TAG, "Adapter Size: " + mBaseCardsAdapter.getCount());
+
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -105,12 +109,18 @@ public class MainActivity extends Activity {
         mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.v(TAG, "On Item Click");
 
                 GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
+                Log.v(TAG, graceCard.getText());
 
+                if(graceCard.getText().equals(COMM))
+                    sendMessageToService(BluetoothService.TEXT_MESSAGE, "Hey Tim");
                 // null adapter means this card has no tap event so do nothing
-                if (graceCard.getAdapter() == null)
+                if (graceCard.getAdapter() == null) {
+                    Log.v(TAG, "Card Scroll Adapter NULL");
                     return;
+                }
 
                 // long ass switch for cards that have functions
                 final String cardText = graceCard.getText();
@@ -125,24 +135,31 @@ public class MainActivity extends Activity {
                     // save to disk, or whatever
                 } else if (cardText.equals(SEND)) {
                     // launch contacts picker, send media to phone or whatever
+                } else if(cardText.equals(COMM)) {
+                    //TODO just a test, When COMM is clicked you shouldn't actually send a msg to Android
+                    sendMessageToService(BluetoothService.TEXT_MESSAGE, "Hey Tim");
                 }
 
                 // kill "old" slider and replace with a new one for our new hierarchy
-                mCurrentSlider.stop();
+                mCurrentSlider.stopSlider();
+                mCurrGestures = new Gestures();
                 mCurrentSlider = new Slider(mCurrentAdapter.getCount());
 
                 // switch out cards being displayed
                 mCurrentAdapter = graceCard.getAdapter();
                 mCardScrollView.setAdapter(mCurrentAdapter);
+                mCardScrollView.activate();
 
                 // visual switch of hierarchy and start our slider
                 mCurrentAdapter.notifyDataSetChanged();
-                mCurrentSlider.run();
+
+                // Start Running the new swipe loop
+                mCurrentSlider.start();
             }
         });
 
         setContentView(mCardScrollView);
-        mCurrentSlider.run();
+        mCurrentSlider.start();
     }
     @Override
     public void onStart() {
@@ -154,6 +171,8 @@ public class MainActivity extends Activity {
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
+
+        // mGestures.startSwipeLoop(mBaseCardsAdapter.getCount());
     }
     @Override
     public void onStop() {
@@ -166,6 +185,8 @@ public class MainActivity extends Activity {
             unbindService(mConnection);
             mBound = false;
         }
+        // mGestures.stopSwipeLoop();
+        mCurrentSlider.stopSlider();
     }
     @Override
     public void onDestroy() {
@@ -179,16 +200,18 @@ public class MainActivity extends Activity {
     // create cards for each hierarchy, add to that's hierarchies adapter
     private void buildScrollers() {
         mBaseCardsAdapter = new GraceCardScrollerAdapter();
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, COMM));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, GAMES));
-
         mMediaCardsAdapter = new GraceCardScrollerAdapter();
+        mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
+
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, COMM));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, GAMES));
+
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, VIDEO));
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
 
-        mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
+
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, REDO));
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE)); // loop back to main menu for now
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND)); // loop back to main menu for now
@@ -205,16 +228,13 @@ public class MainActivity extends Activity {
     }
 
     // this class is responsible for the right-to-left & left-to-right "sliding" of the cards
-    private class Slider implements Runnable {
+    private class Slider extends Thread {
 
-        // Handler for delaying the Runnable
-        private Handler mHandler;
-
-        int mCurrPosition;
-        int mFinalPosition;
-        boolean swipeRight;
-        boolean swipeLeft;
-        boolean stop;
+        private int mCurrPosition;
+        private int mFinalPosition;
+        private boolean swipeRight;
+        private boolean swipeLeft;
+        private boolean stop;
 
         public Slider(int numCards) {
             mCurrPosition = 0;
@@ -222,7 +242,7 @@ public class MainActivity extends Activity {
             swipeRight = true;
             swipeLeft = false;
             stop = false;
-            mHandler = new Handler();
+            Log.v(TAG, "Final Pos Slider: " + mFinalPosition);
         }
 
         @Override
@@ -230,29 +250,37 @@ public class MainActivity extends Activity {
 
             // stop = false;
 
-            if(!stop) {
+            while(!stop) {
 
-                if(swipeRight) {
-                    mGestures.createGesture(Gestures.TYPE_SWIPE_RIGHT);
-                    mCurrPosition++;
-                } else if(swipeLeft) {
-                    mGestures.createGesture(Gestures.TYPE_SWIPE_LEFT);
-                    mCurrPosition--;
+                try {
+                    sleep(3000);
+                } catch (InterruptedException intE) {
+                    Log.e(TAG, "Slider Interrupted", intE);
+                    return;
                 }
 
-                if(mCurrPosition == 0) {
-                    swipeRight = true;
-                    swipeLeft = false;
-                } else if(mCurrPosition == mFinalPosition) {
-                    swipeLeft = true;
-                    swipeRight = false;
-                }
+                if(!stop) {
 
-                mHandler.postDelayed(this, 3000);
+                    if (swipeRight) {
+                        mCurrGestures.createGesture(Gestures.TYPE_SWIPE_RIGHT);
+                        mCurrPosition++;
+                    } else if (swipeLeft) {
+                        mCurrGestures.createGesture(Gestures.TYPE_SWIPE_LEFT);
+                        mCurrPosition--;
+                    }
+
+                    if (mCurrPosition == 0) {
+                        swipeRight = true;
+                        swipeLeft = false;
+                    } else if (mCurrPosition == mFinalPosition) {
+                        swipeLeft = true;
+                        swipeRight = false;
+                    }
+                }
             }
         }
 
-        public void stop() {
+        public void stopSlider() {
             stop = true;
         }
     }
@@ -265,7 +293,6 @@ public class MainActivity extends Activity {
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        // shouldn't be called, because Bluetooth should be enabled on Glass
 
         if (resultCode != RESULT_OK)
             return;
@@ -340,6 +367,7 @@ public class MainActivity extends Activity {
             mBluetoothServiceMessenger = new Messenger(iBinder);
             mBound = true;
 
+            // Send a first message to the service
             setUpMessage();
         }
         /**

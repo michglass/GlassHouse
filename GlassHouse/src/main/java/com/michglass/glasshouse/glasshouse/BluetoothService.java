@@ -369,20 +369,21 @@ public class BluetoothService extends Service {
         Log.v(TAG, mbtAdapter.getName());
         try {
             // start looking only if there's at least one device
-            if(pairedDevices.size() > 0) {
+            if(pairedDevices.size() == 1) {
                 // find specific Device (Grace's phone)
                 for(BluetoothDevice btDevice : pairedDevices) {
                     // if device is found save it in member var
-                    if(btDevice.getName().equals(DEVICE_NAME)) {
+                    Log.v(TAG, "Paired Device: "+ btDevice.getName());
+                    mbtDevice = btDevice;
+                    /*if(btDevice.getName().equals(DEVICE_NAME)) {
                         mbtDevice = btDevice;
-                    }
-                    Log.v(TAG, "Device Name: "+ mbtDevice.getName());
+                    }*/
                 }
             } else {
                 Log.v(TAG, "No devices found");
             }
         } catch (Exception e) {
-            Log.v(TAG, "No devices found");
+            Log.e(TAG, "Query Error", e);
         }
     }
 
