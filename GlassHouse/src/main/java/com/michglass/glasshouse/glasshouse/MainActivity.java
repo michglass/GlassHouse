@@ -5,13 +5,16 @@ package com.michglass.glasshouse.glasshouse;
  * Date: 2/26/14
  */
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -149,6 +152,34 @@ public class MainActivity extends Activity {
         });
     }
 
+    private class FakeProgress extends AsyncTask<Void, Void, Void> {
+
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            pd = new ProgressDialog(MainActivity.this);
+            pd.setTitle("Processing...");
+            pd.setMessage("Please wait.");
+            pd.setCancelable(false);
+            pd.setIndeterminate(true);
+            pd.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+    }
+
     // sets current adapter to next menus adapter and sets current view to it and starts its respective slider
     private void switchHierarchy() {
 
@@ -182,6 +213,7 @@ public class MainActivity extends Activity {
 
         // mGestures.startSwipeLoop(mBaseCardsAdapter.getCount());
     }
+
     @Override
     public void onStop() {
         super.onStop();
@@ -196,6 +228,7 @@ public class MainActivity extends Activity {
         // mGestures.stopSwipeLoop();
         mCurrentSlider.stopSlider();
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -221,7 +254,6 @@ public class MainActivity extends Activity {
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, VIDEO));
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
-
 
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, REDO));
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE)); // loop back to main menu for now
@@ -274,8 +306,6 @@ public class MainActivity extends Activity {
         @Override
         public void run() {
 
-            // stop = false;
-
             while(!stop) {
 
                 try {
@@ -288,9 +318,13 @@ public class MainActivity extends Activity {
                 if(!stop) {
 
                     if (swipeRight) {
+                        if (stop)
+                            return;
                         mCurrGestures.createGesture(Gestures.TYPE_SWIPE_RIGHT);
                         mCurrPosition++;
                     } else if (swipeLeft) {
+                        if (stop)
+                            return;
                         mCurrGestures.createGesture(Gestures.TYPE_SWIPE_LEFT);
                         mCurrPosition--;
                     }
@@ -320,25 +354,22 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
+        Log.e(TAG, "onActivityResult: requestCode = " + requestCode);
+
         if (resultCode != RESULT_OK)
             return;
 
-        switch (resultCode) {
+        switch (requestCode) {
 
-            case RESULT_OK:
-                Log.v(TAG, "Bluetooth Success");
-                break;
-            case RESULT_CANCELED:
-                Log.v(TAG, "Bluetooth Failed");
-                break;
             case CAMERA_REQ:
             {
                 // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
-                Uri imageLocation = intent.getData();
                 Bundle extras = intent.getExtras();
-                Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
+                Bitmap screenshot = (Bitmap) extras.get("data");
+                // Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 // Bitmap screenshot = (Bitmap) extras.get("image");
-                insertScreenshotIntoPostMediaMenu(screenshot, imageLocation);
+                // insertScreenshotIntoPostMediaMenu(screenshot, Uri.parse(CameraManager.EXTRA_PICTURE_FILE_PATH));
+                insertScreenshotIntoPostMediaMenu(screenshot, Uri.parse(CameraManager.EXTRA_THUMBNAIL_FILE_PATH));
 
                 // now switch hierarchy to PostMedia menus
                 switchHierarchy();
@@ -347,11 +378,11 @@ public class MainActivity extends Activity {
             case VIDEO_REQ:
             {
                 // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
-                Uri videoLocation = intent.getData();
+                // Uri videoLocation = intent.getData();
                 // Bitmap screenshot = ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
                 Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
-                Video video = (Video) intent.getExtras().get(CameraManager.EXTRA_VIDEO_FILE_PATH);
-                insertScreenshotIntoPostMediaMenu(screenshot, videoLocation);
+                // Video video = (Video) intent.getExtras().get(CameraManager.EXTRA_VIDEO_FILE_PATH);
+                insertScreenshotIntoPostMediaMenu(screenshot, Uri.parse(CameraManager.EXTRA_VIDEO_FILE_PATH));
 
                 // now switch hierarchy to PostMedia menus
                 switchHierarchy();
@@ -359,12 +390,14 @@ public class MainActivity extends Activity {
             }
             default:
         }
+
+        super.onActivityResult(requestCode, resultCode, intent);
     }
 
     // Utility functions
 
     private void insertScreenshotIntoPostMediaMenu(Bitmap screenshot, Uri mediaLocation) {
-        mMedia.addMedia(screenshot, mediaLocation);
+//        mMedia.addMedia(screenshot, mediaLocation);
         GraceCard screenshotCard = new GraceCard(this, null, "");
         screenshotCard.addImage(mediaLocation);
         mPostMediaCardsAdapter.pushCardFront(screenshotCard);
@@ -413,6 +446,7 @@ public class MainActivity extends Activity {
             mBound = false;
         }
     };
+
     /**
      * Send Message To Service
      * Sends a message over the Service to Android
@@ -462,6 +496,7 @@ public class MainActivity extends Activity {
             Log.e(TAG, "Couldn't contact Service", remE);
         }
     }
+
     /**
      * Message Handler
      * Handles incoming messages from Service
@@ -495,7 +530,7 @@ public class MainActivity extends Activity {
                     break;
                 case BluetoothService.COMMAND_OK:
                     Log.v(TAG, "Command ok");
-                    //TODO Do something on OK
+                    mCurrGestures.createGesture(Gestures.TYPE_TAP);
                     break;
                 case BluetoothService.COMMAND_BACK:
                     Log.v(TAG, "Command back");
