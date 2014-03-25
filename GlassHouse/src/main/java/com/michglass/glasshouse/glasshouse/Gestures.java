@@ -35,9 +35,8 @@ public class Gestures {
     // Variable for managing the swipe loop
     public static int mCurrPosition;
     public static int mFinalPosition;
-    public static boolean mKeepRunning = true; // indicates if the swipe loop should stop
+    private boolean mKeepRunning; // indicates if the swipe loop should stop
     private Handler mHandler = new Handler();
-
 
     /**
      * Create Gesture
@@ -48,6 +47,65 @@ public class Gestures {
         GESTURE_TYPE = gestureType;
         instrThread = new InstThread(new Instrumentation());
         instrThread.start();
+    }
+    /**
+     * Swipe Loop
+     * Runnable for swiping through a card scroll view
+     * @param size Size of the CardScrollView
+     */
+    private Runnable swipeLoop(int size) {
+        mCurrPosition = 0;
+        mFinalPosition = size - 1;
+
+        return new Runnable() {
+            boolean swipeRight = true;
+            boolean swipeLeft = false;
+            @Override
+            public void run() {
+                Log.v(TAG, "Runnable Run");
+                Log.v(TAG, "keep runn: " + mKeepRunning);
+                if(mKeepRunning) {
+
+                    Log.v(TAG, "Swipe Loop");
+                    if(swipeRight) {
+                        createGesture(Gestures.TYPE_SWIPE_RIGHT);
+                        mCurrPosition++;
+                    } else if(swipeLeft) {
+                        createGesture(Gestures.TYPE_SWIPE_LEFT);
+                        mCurrPosition--;
+                    }
+
+                    if(mCurrPosition == 0) {
+                        swipeRight = true;
+                        swipeLeft = false;
+                    }
+                    if(mCurrPosition == mFinalPosition) {
+                        swipeLeft = true;
+                        swipeRight = false;
+                    }
+
+                    mHandler.postDelayed(this, 3000);
+                }
+                // mKeepRunning = true;
+            }
+        };
+    }
+    /**
+     * Start Swipe Loop
+     * Set KeepRunning to True
+     */
+    public void startSwipeLoop(int size) {
+        mKeepRunning = true;
+
+        Runnable mSwipeLoopRunnable = swipeLoop(size);
+        mSwipeLoopRunnable.run();
+    }
+    /**
+     * Stop Swipe Loop
+     * Set KeepRunning to False
+     */
+    public void stopSwipeLoop() {
+        mKeepRunning = false;
     }
 
     /**
