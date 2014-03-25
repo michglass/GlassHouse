@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private GraceCardScrollerAdapter mCommMessagesAdapter;
     private GraceCardScrollerAdapter mGameCardsAdapter;
     private GraceCardScrollerAdapter mCurrentAdapter;
+    private GraceCardScrollerAdapter mNextAdapter;
 
     private static final String MEDIA = "Media";
     private static final String COMM = "Comm";
@@ -65,7 +66,6 @@ public class MainActivity extends Activity {
     private static final String SAVE = "Save";
     private static final String SEND = "Send";
     private static final String BACK = "Back";
-
 
     /**
      * Activity Lifecycle Methods
@@ -97,9 +97,12 @@ public class MainActivity extends Activity {
         Log.v(TAG, "Scroll View Size: " + mCardScrollView.getCount());
         Log.v(TAG, "Adapter Size: " + mBaseCardsAdapter.getCount());
 
-
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        // start up the base menu cards and its slider
+        setContentView(mCardScrollView);
+        mCurrentSlider.start();
 
         // implement any specific card behavior here, wrap it in a class though so this function isn't huge
         mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -118,12 +121,17 @@ public class MainActivity extends Activity {
                     return;
                 }
 
+                mCurrentSlider.stopSlider();
+                mNextAdapter = graceCard.getAdapter();
+
                 // long ass switch for cards that have functions
                 final String cardText = graceCard.getText();
                 if (cardText.equals(CAMERA)) {
                     takePicture();
+                    return;
                 } else if (cardText.equals(VIDEO)) {
                     recordVideo();
+                    return;
                 } else if (cardText.equals(REDO)) {
                     // remove screenshot from post media menu cards
                     mPostMediaCardsAdapter.popCardFront();
@@ -136,27 +144,31 @@ public class MainActivity extends Activity {
                     sendMessageToService(BluetoothService.TEXT_MESSAGE, "Hey Tim");
                 }
 
-                // kill "old" slider and replace with a new one for our new hierarchy
-                mCurrentSlider.stopSlider();
-                mCurrGestures = new Gestures();
-                mCurrentSlider = new Slider(mCurrentAdapter.getCount());
-
-                // switch out cards being displayed
-                mCurrentAdapter = graceCard.getAdapter();
-                mCardScrollView.setAdapter(mCurrentAdapter);
-                mCardScrollView.activate();
-
-                // visual switch of hierarchy and start our slider
-                mCurrentAdapter.notifyDataSetChanged();
-
-                // Start Running the new swipe loop
-                mCurrentSlider.start();
+                switchHierarchy();
             }
         });
+    }
 
-        setContentView(mCardScrollView);
+    // sets current adapter to next menus adapter and sets current view to it and starts its respective slider
+    private void switchHierarchy() {
+
+        mCurrentAdapter = mNextAdapter;
+
+        // replace slider with a new one for our new hierarchy
+        mCurrGestures = new Gestures();
+        mCurrentSlider = new Slider(mCurrentAdapter.getCount());
+
+        // switch out cards being displayed
+        mCardScrollView.setAdapter(mCurrentAdapter);
+        mCardScrollView.activate();
+
+        // visual switch of hierarchy and start our slider
+        mCurrentAdapter.notifyDataSetChanged();
+
+        // Start Running the new swipe loop
         mCurrentSlider.start();
     }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -309,6 +321,9 @@ public class MainActivity extends Activity {
                 Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 // Bitmap screenshot = (Bitmap) extras.get("image");
                 insertScreenshotIntoPostMediaMenu(screenshot, imageLocation);
+
+                // now switch hierarchy to PostMedia menus
+                switchHierarchy();
                 break;
             }
             case VIDEO_REQ:
@@ -319,6 +334,9 @@ public class MainActivity extends Activity {
                 Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 Video video = (Video) intent.getExtras().get(CameraManager.EXTRA_VIDEO_FILE_PATH);
                 insertScreenshotIntoPostMediaMenu(screenshot, videoLocation);
+
+                // now switch hierarchy to PostMedia menus
+                switchHierarchy();
                 break;
             }
             default:
@@ -332,7 +350,6 @@ public class MainActivity extends Activity {
         GraceCard screenshotCard = new GraceCard(this, null, "");
         screenshotCard.addImage(mediaLocation);
         mPostMediaCardsAdapter.pushCardFront(screenshotCard);
-        mPostMediaCardsAdapter.notifyDataSetChanged();
     }
 
     private void takePicture() {
