@@ -69,6 +69,8 @@ public class MainActivity extends Activity {
     private static final String SAVE = "Save";
     private static final String SEND = "Send";
     private static final String BACK = "Back";
+    /**for bluetooth messaging*/
+    private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
 
     /**
      * Activity Lifecycle Methods
@@ -116,7 +118,7 @@ public class MainActivity extends Activity {
                 GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
                 Log.v(TAG, graceCard.getText());
 
-                if(graceCard.getText().equals(COMM))
+                if(graceCard.getGraceCardType() == GraceCardType.COMM)
                     sendMessageToService(BluetoothService.TEXT_MESSAGE, "Hey Tim");
                 // null adapter means this card has no tap event so do nothing
                 if (graceCard.getAdapter() == null) {
@@ -129,22 +131,28 @@ public class MainActivity extends Activity {
 
                 // long ass switch for cards that have functions
                 final String cardText = graceCard.getText();
-                if (cardText.equals(CAMERA)) {
+                if (graceCard.getGraceCardType() == GraceCardType.CAMERA) {
                     takePicture();
                     return;
-                } else if (cardText.equals(VIDEO)) {
+                } else if (graceCard.getGraceCardType() == GraceCardType.VIDEO) {
                     recordVideo();
                     return;
-                } else if (cardText.equals(REDO)) {
+                } else if (graceCard.getGraceCardType() == GraceCardType.REDO) {
                     // remove screenshot from post media menu cards
                     mPostMediaCardsAdapter.popCardFront();
-                } else if (cardText.equals(SAVE)) {
+                } else if (graceCard.getGraceCardType() == GraceCardType.SAVE) {
                     // save to disk, or whatever
-                } else if (cardText.equals(SEND)) {
+                } else if (graceCard.getGraceCardType() == GraceCardType.SEND) {
                     // launch contacts picker, send media to phone or whatever
-                } else if(cardText.equals(COMM)) {
+                } else if(graceCard.getGraceCardType() == GraceCardType.CONTACT) {
+                    GraceContactCard contact = (GraceContactCard) graceCard;
+                    bluetoothMessage.setNum(contact.phoneNumber);
+                }
+                else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
                     //TODO just a test, When COMM is clicked you shouldn't actually send a msg to Android
-                    sendMessageToService(BluetoothService.TEXT_MESSAGE, "Hey Tim");
+                    bluetoothMessage.setMessage(graceCard.getText());
+                    sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
+                    Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
                 }
 
                 switchHierarchy();
@@ -455,7 +463,6 @@ public class MainActivity extends Activity {
      */
     public void sendMessageToService(int messageType, Object message) {
         Message msg = new Message();
-
         switch (messageType) {
             case BluetoothService.INT_MESSAGE:
                 int intMsg = (Integer) message;
