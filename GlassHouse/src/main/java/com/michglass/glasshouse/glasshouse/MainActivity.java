@@ -212,7 +212,7 @@ public class MainActivity extends Activity {
         mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
 
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, COMM));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, COMM));
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, GAMES));
 
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, CAMERA));
@@ -225,12 +225,21 @@ public class MainActivity extends Activity {
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND)); // loop back to main menu for now
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
 
+
         /* **** below needs to be implemented still */
 
         // communication hierarchy
         mCommContactsAdapter = new GraceCardScrollerAdapter();
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032");
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128");
+        for(GraceContactCard C: GraceContactCard.contactList){
+            mCommContactsAdapter.pushCardBack(C);
+            Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
+        }
         mCommMessagesAdapter = new GraceCardScrollerAdapter();
-
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry");
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty");
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help");
         // game hierarchy
         mGameCardsAdapter = new GraceCardScrollerAdapter();
     }
