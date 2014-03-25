@@ -207,9 +207,12 @@ public class MainActivity extends Activity {
 
     // create cards for each hierarchy, add to that's hierarchies adapter
     private void buildScrollers() {
+        Log.v(TAG, "private void buildScrollers() called");
         mBaseCardsAdapter = new GraceCardScrollerAdapter();
         mMediaCardsAdapter = new GraceCardScrollerAdapter();
         mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
+        mCommContactsAdapter = new GraceCardScrollerAdapter();
+        mCommMessagesAdapter = new GraceCardScrollerAdapter();
 
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, MEDIA));
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, COMM));
@@ -224,22 +227,28 @@ public class MainActivity extends Activity {
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SAVE)); // loop back to main menu for now
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, SEND)); // loop back to main menu for now
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, BACK));
-
+        Log.v(TAG, "Post MEdia Adapter Built");
 
         /* **** below needs to be implemented still */
 
         // communication hierarchy
-        mCommContactsAdapter = new GraceCardScrollerAdapter();
         GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032");
+        Log.v(TAG, "Tim Wood contact added to adapter");
         GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128");
-        for(GraceContactCard C: GraceContactCard.contactList){
+        Log.v(TAG, "Right before loop to add contacts to adapter")
+;        for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
             Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
         }
-        mCommMessagesAdapter = new GraceCardScrollerAdapter();
+
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry");
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty");
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help");
+        for(GraceMessageCard M: GraceMessageCard.messageList){
+            mCommMessagesAdapter.pushCardBack(M);
+            Log.v(TAG, "Message added to Adapter: " + M.Message);
+        }
+
         // game hierarchy
         mGameCardsAdapter = new GraceCardScrollerAdapter();
     }

@@ -2,6 +2,7 @@ package com.michglass.glasshouse.glasshouse;
 
 import android.content.Context;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
@@ -9,9 +10,9 @@ import java.util.HashSet;
  */
 public class GraceMessageCard extends GraceCard{
     public String Message;
-    public static HashSet<GraceMessageCard> messageList;
+    public static ArrayList<GraceMessageCard> messageList = new ArrayList<GraceMessageCard>();
     GraceMessageCard(Context context, GraceCardScrollerAdapter adapter, String mess){
-        super(context, adapter, "MESSAGE");
+        super(context, adapter, mess);
         Message = mess;
     }
     public static void addCard(Context context, GraceCardScrollerAdapter adapter, String mess){
