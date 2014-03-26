@@ -16,6 +16,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.FileObserver;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -27,9 +28,12 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.provider.MediaStore.*;
+import android.widget.Toast;
 
 import com.google.android.glass.media.CameraManager;
 import com.google.android.glass.widget.CardScrollView;
+
+import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -49,7 +53,6 @@ public class MainActivity extends Activity {
     private CardScrollView mCardScrollView;
     private Gestures mCurrGestures;
     private Slider mCurrentSlider;
-    private Media mMedia;
 
     private GraceCardScrollerAdapter mBaseCardsAdapter;
     private GraceCardScrollerAdapter mMediaCardsAdapter;
@@ -96,7 +99,6 @@ public class MainActivity extends Activity {
         mCardScrollView.setAdapter(mBaseCardsAdapter);
         mCardScrollView.activate(); // makes it work
 
-        mMedia = new Media();
         mCurrGestures = new Gestures();
         mCurrentSlider = new Slider(mBaseCardsAdapter.getCount());
         Log.v(TAG, "Scroll View Size: " + mCardScrollView.getCount());
@@ -158,34 +160,6 @@ public class MainActivity extends Activity {
                 switchHierarchy();
             }
         });
-    }
-
-    private class FakeProgress extends AsyncTask<Void, Void, Void> {
-
-        ProgressDialog pd;
-
-        @Override
-        protected void onPreExecute() {
-            pd = new ProgressDialog(MainActivity.this);
-            pd.setTitle("Processing...");
-            pd.setMessage("Please wait.");
-            pd.setCancelable(false);
-            pd.setIndeterminate(true);
-            pd.show();
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
     }
 
     // sets current adapter to next menus adapter and sets current view to it and starts its respective slider
@@ -255,7 +229,7 @@ public class MainActivity extends Activity {
         mCommContactsAdapter = new GraceCardScrollerAdapter();
         mCommMessagesAdapter = new GraceCardScrollerAdapter();
 
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA));
+        // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Play a Game", GraceCardType.GAMES));
 
@@ -362,8 +336,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
-        Log.e(TAG, "onActivityResult: requestCode = " + requestCode);
-
         if (resultCode != RESULT_OK)
             return;
 
@@ -371,28 +343,15 @@ public class MainActivity extends Activity {
 
             case CAMERA_REQ:
             {
-                // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
-                Bundle extras = intent.getExtras();
-                Bitmap screenshot = (Bitmap) extras.get("data");
-                // Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
-                // Bitmap screenshot = (Bitmap) extras.get("image");
-                // insertScreenshotIntoPostMediaMenu(screenshot, Uri.parse(CameraManager.EXTRA_PICTURE_FILE_PATH));
-                insertScreenshotIntoPostMediaMenu(screenshot, Uri.parse(CameraManager.EXTRA_THUMBNAIL_FILE_PATH));
-
-                // now switch hierarchy to PostMedia menus
+                final String picturePath = intent.getStringExtra(CameraManager.EXTRA_PICTURE_FILE_PATH);
+                // for now this is not gonna work
+                // processPicture.execute(picturePath);
                 switchHierarchy();
                 break;
             }
             case VIDEO_REQ:
             {
-                // fetch media URI, get screenshot from video, create new card and add to beginning of PostMedia adapter
-                // Uri videoLocation = intent.getData();
-                // Bitmap screenshot = ThumbnailUtils.createVideoThumbnail(videoLocation.toString(), MediaStore.Images.Thumbnails.MINI_KIND);
-                Bitmap screenshot = (Bitmap) intent.getExtras().get(CameraManager.EXTRA_THUMBNAIL_FILE_PATH);
                 // Video video = (Video) intent.getExtras().get(CameraManager.EXTRA_VIDEO_FILE_PATH);
-                insertScreenshotIntoPostMediaMenu(screenshot, Uri.parse(CameraManager.EXTRA_VIDEO_FILE_PATH));
-
-                // now switch hierarchy to PostMedia menus
                 switchHierarchy();
                 break;
             }
@@ -404,8 +363,84 @@ public class MainActivity extends Activity {
 
     // Utility functions
 
-    private void insertScreenshotIntoPostMediaMenu(Bitmap screenshot, Uri mediaLocation) {
-//        mMedia.addMedia(screenshot, mediaLocation);
+    private AsyncTask<String, Void, Uri> processPicture = new AsyncTask<String, Void, Uri>() {
+
+        private ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            pd = new ProgressDialog(MainActivity.this);
+            pd.setMessage("Processing...");
+            pd.setCancelable(false);
+            pd.setIndeterminate(true);
+            pd.show();
+        }
+
+        @Override
+        protected Uri doInBackground(String... params) {
+            Uri result = null;
+            while ((result = processPictureWhenReady(params[0])) == null)
+                ;
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute (Uri picture) {
+            pd.dismiss();
+            Log.e(TAG, "picture path on onPost = " + picture.toString());
+            insertScreenshotIntoPostMediaMenu(picture);
+        }
+    };
+
+    private Uri processPictureWhenReady(final String picturePath) {
+        final File pictureFile = new File(picturePath);
+
+        if (pictureFile.exists()) {
+            Log.e(TAG, "picture file done, path = " + picturePath.toString());
+            return buildFileUri(picturePath.toString());
+        } else {
+            // The file does not exist yet. Before starting the file observer, you
+            // can update your UI to let the user know that the application is
+            // waiting for the picture (for example, by displaying the thumbnail
+            // image and a progress indicator).
+
+            final File parentDirectory = pictureFile.getParentFile();
+            FileObserver observer = new FileObserver(parentDirectory.getPath()) {
+                // Protect against additional pending events after CLOSE_WRITE is
+                // handled.
+                private boolean isFileWritten;
+
+                @Override
+                public void onEvent(int event, String path) {
+                    if (!isFileWritten) {
+                        // For safety, make sure that the file that was created in
+                        // the directory is actually the one that we're expecting.
+                        File affectedFile = new File(parentDirectory, path);
+                        isFileWritten = (event == FileObserver.CLOSE_WRITE
+                                && affectedFile.equals(pictureFile));
+
+                        if (isFileWritten) {
+                            stopWatching();
+
+                            // Now that the file is ready, recursively call
+                            // processPictureWhenReady again (on the UI thread).
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    processPictureWhenReady(picturePath);
+                                }
+                            });
+                        }
+                    }
+                }
+            };
+            observer.startWatching();
+        }
+        return null;
+    }
+
+    private void insertScreenshotIntoPostMediaMenu(Uri mediaLocation) {
         GraceCard screenshotCard = new GraceCard(this, null, "", GraceCardType.SCREENSHOT);
         screenshotCard.addImage(mediaLocation);
         mPostMediaCardsAdapter.pushCardFront(screenshotCard);
@@ -419,6 +454,10 @@ public class MainActivity extends Activity {
     private void recordVideo() {
         Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         startActivityForResult(intent, VIDEO_REQ);
+    }
+
+    private Uri buildFileUri(String pathToFile) {
+        return Uri.parse("file://" + pathToFile);
     }
 
     /**
