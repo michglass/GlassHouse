@@ -257,10 +257,10 @@ public class MainActivity extends Activity {
             Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
         }
 
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "This message brought to you by the Google Glass! Woop.", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'd like something to eat please.", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "Hi, how are you doing?", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "This message brought to you by the Google Glass!", GraceCardType.MESSAGE);
         for(GraceMessageCard M: GraceMessageCard.messageList){
             mCommMessagesAdapter.pushCardBack(M);
             Log.v(TAG, "Message added to Adapter: " + M.Message);
