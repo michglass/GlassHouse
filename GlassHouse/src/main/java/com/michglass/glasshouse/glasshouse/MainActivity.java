@@ -246,11 +246,11 @@ public class MainActivity extends Activity {
         /* **** below needs to be implemented still */
 
         // communication hierarchy
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Oliver Breit", "7342192654", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "2695986202", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+        //GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
 ;        for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
