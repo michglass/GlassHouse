@@ -269,18 +269,21 @@ public class MainActivity extends Activity {
         /* **** below needs to be implemented still */
 
         // communication hierarchy
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+        //GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
 ;        for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
             Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
         }
 
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'd like something to eat please.", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "Hi, how are you doing?", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "This message brought to you by the Google Glass!", GraceCardType.MESSAGE);
         for(GraceMessageCard M: GraceMessageCard.messageList){
             mCommMessagesAdapter.pushCardBack(M);
             Log.v(TAG, "Message added to Adapter: " + M.Message);
