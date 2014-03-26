@@ -249,6 +249,8 @@ public class MainActivity extends Activity {
         GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Tim Wood contact added to adapter");
         GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Oliver Breit", "7342192654", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "2695986202", GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
 ;        for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
@@ -258,6 +260,7 @@ public class MainActivity extends Activity {
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Hungry", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm Thirsty", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I need help", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mBaseCardsAdapter, "This message brought to you by the Google Glass! Woop.", GraceCardType.MESSAGE);
         for(GraceMessageCard M: GraceMessageCard.messageList){
             mCommMessagesAdapter.pushCardBack(M);
             Log.v(TAG, "Message added to Adapter: " + M.Message);
