@@ -5,5 +5,7 @@ package com.michglass.glasshouse.glasshouse;
  */
 public enum GraceCardType {
     COMM, MEDIA, GAMES, CAMERA,
-    VIDEO, REDO, SAVE, SEND, BACK, CONTACT, MESSAGE, SCREENSHOT
+    VIDEO, REDO, SAVE, SEND, BACK,
+    CONTACT, MESSAGE, SCREENSHOT,
+    EXIT
 }

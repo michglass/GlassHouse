@@ -259,6 +259,7 @@ public class MainActivity extends Activity {
         // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
         mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Play a Game", GraceCardType.GAMES));
+        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Exit Glassistance", GraceCardType.EXIT));
 
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
         mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Record a Video", GraceCardType.VIDEO));
@@ -283,6 +284,7 @@ public class MainActivity extends Activity {
             mCommContactsAdapter.pushCardBack(C);
             Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
         }
+        mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back to Main Menu", GraceCardType.BACK));
 
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'd like something to eat please.", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mBaseCardsAdapter, "Hi, how are you doing?", GraceCardType.MESSAGE);
@@ -292,6 +294,8 @@ public class MainActivity extends Activity {
             mCommMessagesAdapter.pushCardBack(M);
             Log.v(TAG, "Message added to Adapter: " + M.Message);
         }
+        mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Back to Contact List", GraceCardType.BACK));
+
 
         // game hierarchy
         mGameCardsAdapter = new GraceCardScrollerAdapter();
