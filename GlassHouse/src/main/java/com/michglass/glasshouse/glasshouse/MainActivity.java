@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -22,6 +23,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -34,6 +36,8 @@ import com.google.android.glass.media.CameraManager;
 import com.google.android.glass.widget.CardScrollView;
 
 import java.io.File;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class MainActivity extends Activity {
 
@@ -53,6 +57,7 @@ public class MainActivity extends Activity {
     private CardScrollView mCardScrollView;
     private Gestures mCurrGestures;
     private Slider mCurrentSlider;
+    private Map<String, String> mContacts;
 
     private GraceCardScrollerAdapter mBaseCardsAdapter;
     private GraceCardScrollerAdapter mMediaCardsAdapter;
@@ -99,6 +104,7 @@ public class MainActivity extends Activity {
         mCardScrollView.setAdapter(mBaseCardsAdapter);
         mCardScrollView.activate(); // makes it work
 
+        mContacts = new TreeMap<String, String>();
         mCurrGestures = new Gestures();
         mCurrentSlider = new Slider(mBaseCardsAdapter.getCount());
         Log.v(TAG, "Scroll View Size: " + mCardScrollView.getCount());
@@ -158,6 +164,23 @@ public class MainActivity extends Activity {
                 switchHierarchy();
             }
         });
+
+        // grab contacts
+        new AsyncTask<Void, Void, Void> () {
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null,null, null);
+                while (phones.moveToNext())
+                {
+                    final String name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+                    final String number = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                    Log.e(TAG, "contact retrieved: " + name + " with number " + number);
+                    mContacts.put(name, number);
+                }
+                return null;
+            }
+        }.execute();
     }
 
     // sets current adapter to next menus adapter and sets current view to it and starts its respective slider
@@ -250,11 +273,11 @@ public class MainActivity extends Activity {
         /* **** below needs to be implemented still */
 
         // communication hierarchy
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Vijay Ganesh", "2404630128", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Oliver Breit", "7342192654", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "2695986202", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+        //GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
         for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
