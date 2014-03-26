@@ -78,14 +78,13 @@ public class BluetoothService extends Service {
     public static final int INT_MESSAGE = 16;
 
     /**
-     * Service Methods
-     * Lifecycle methods
-     * Handling messages from Client
-     * Sending Messages to Client
+     * Service Methods: Handle Service Lifecycle
+     * Handling messages from Client: Client meaning for example the Main Activity
+     * Sending Messages to Client: Sending messages to Main Activity (not to Glass)
      */
 
     /**
-     * Life cycle methods of the Service
+     * Life cycle methods for the Service
      */
     @Override
     public void onCreate() {
@@ -222,6 +221,7 @@ public class BluetoothService extends Service {
      * Start Threads
      * Manage Connection
      * Shut Down Threads
+     * Send Messages to Android Phone
      */
 
     /**

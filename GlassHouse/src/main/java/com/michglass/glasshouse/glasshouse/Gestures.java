@@ -1,7 +1,6 @@
 package com.michglass.glasshouse.glasshouse;
 
 import android.app.Instrumentation;
-import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.InputDevice;
@@ -18,7 +17,7 @@ import android.view.MotionEvent;
 public class Gestures {
 
     // Debug
-    private static final String TAG = "Gestures";
+    // private static final String TAG = "Gestures";
 
     // Types of Gestures
     public static final int TYPE_TAP = 1;
@@ -32,11 +31,15 @@ public class Gestures {
     // Thread that injects a motion event
     InstThread instrThread;
 
-    // Variable for managing the swipe loop
-    public static int mCurrPosition;
-    public static int mFinalPosition;
-    private boolean mKeepRunning; // indicates if the swipe loop should stop
-    private Handler mHandler = new Handler();
+    // keep Instrumentation Thread running
+    private boolean mKeepRunning;
+
+    /**
+     * Constructor
+     */
+    public Gestures() {
+        mKeepRunning = true;
+    }
 
     /**
      * Create Gesture
@@ -132,7 +135,7 @@ public class Gestures {
         move2.setSource(InputDevice.SOURCE_TOUCHPAD);
         instrThread.sendEvent(move2);
 
-        Log.v(TAG, "X1: " + currPos);
+        //Log.v(TAG, "X1: " + currPos);
 
         // get and inject up event
         MotionEvent up = getEvent(x2, 90f, MotionEvent.ACTION_UP);
@@ -159,7 +162,12 @@ public class Gestures {
                 0
         );
     }
-
+    /**
+     * Stop Injecting Events
+     */
+    public void stopInjecting() {
+        mKeepRunning = false;
+    }
     /**
      * Instrumentation Thread
      * Inject Gestures to Glass
@@ -200,11 +208,25 @@ public class Gestures {
         }
         public void sendEvent(MotionEvent event) {
             Log.v(TAG, "send event");
-            mInstr.sendPointerSync(event);
+            if(mKeepRunning)
+                try {
+                    mInstr.sendPointerSync(event);
+                } catch (SecurityException securityE) {
+                    Log.e(TAG, "Injecting after app closed", securityE);
+                }
+            else
+                Log.v(TAG, "Instr Thread Stop");
         }
         public void sendEvent(KeyEvent event) {
             Log.v(TAG, "Send Key Event");
-            mInstr.sendKeySync(event);
+            if(mKeepRunning)
+                try {
+                    mInstr.sendKeySync(event);
+                } catch (SecurityException secE) {
+                    Log.e(TAG, "Injecting after app closed", secE);
+                }
+            else
+                Log.v(TAG, "Instr Thread Stop");
         }
     }
 }

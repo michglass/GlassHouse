@@ -120,16 +120,15 @@ public class MainActivity extends Activity {
                 GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
                 Log.v(TAG, graceCard.getText());
 
-                if(graceCard.getGraceCardType() == GraceCardType.COMM)
-                    sendMessageToService(BluetoothService.TEXT_MESSAGE, "Hey Tim");
                 // null adapter means this card has no tap event so do nothing
                 if (graceCard.getAdapter() == null) {
                     Log.v(TAG, "Card Scroll Adapter NULL");
                     return;
                 }
 
-                mCurrentSlider.stopSlider();
+                // set the next adapter and stop the current slider
                 mNextAdapter = graceCard.getAdapter();
+                mCurrentSlider.stopSlider();
 
                 // long ass switch for cards that have functions
                 final String cardText = graceCard.getText();
@@ -151,7 +150,6 @@ public class MainActivity extends Activity {
                     bluetoothMessage.setNum(contact.phoneNumber);
                 }
                 else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
-                    //TODO just a test, When COMM is clicked you shouldn't actually send a msg to Android
                     bluetoothMessage.setMessage(graceCard.getText());
                     sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
                     Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
@@ -192,13 +190,16 @@ public class MainActivity extends Activity {
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
+    }
 
-        // mGestures.startSwipeLoop(mBaseCardsAdapter.getCount());
+    @Override
+    public void onPause() {
+        Log.v(TAG, "On Pause");
+        super.onPause();
     }
 
     @Override
     public void onStop() {
-        super.onStop();
         Log.v(TAG, "On Stop");
 
         // Unbind from BT Service
@@ -207,8 +208,11 @@ public class MainActivity extends Activity {
             unbindService(mConnection);
             mBound = false;
         }
-        // mGestures.stopSwipeLoop();
+
+        // Stop Injecting
+        mCurrGestures.stopInjecting();
         mCurrentSlider.stopSlider();
+        super.onStop();
     }
 
     @Override
@@ -252,7 +256,7 @@ public class MainActivity extends Activity {
         GraceContactCard.addCard(this, mCommMessagesAdapter, "Oliver Breit", "7342192654", GraceCardType.CONTACT);
         GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "2695986202", GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
-;        for(GraceContactCard C: GraceContactCard.contactList){
+        for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
             Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
         }
@@ -270,15 +274,29 @@ public class MainActivity extends Activity {
         mGameCardsAdapter = new GraceCardScrollerAdapter();
     }
 
-    // this class is responsible for the right-to-left & left-to-right "sliding" of the cards
+    /**
+     * Slider Thread
+     * Loops through a Card ScrollView
+     * Sending Motion Events to Glass
+     */
     private class Slider extends Thread {
 
+        // Debug
+        private final String TAG = "Slider Thread";
+
+        // Member vars
         private int mCurrPosition;
         private int mFinalPosition;
         private boolean swipeRight;
         private boolean swipeLeft;
         private boolean stop;
 
+        /**
+         * Slider
+         * Set up Slider members
+         * @param numCards Size of the current CardScrollAdapter
+         *                 so the Slider knows the boundaries
+         */
         public Slider(int numCards) {
             mCurrPosition = 0;
             mFinalPosition = numCards - 1;
@@ -287,13 +305,17 @@ public class MainActivity extends Activity {
             stop = false;
             Log.v(TAG, "Final Pos Slider: " + mFinalPosition);
         }
-
+        /**
+         * Run
+         */
         @Override
         public void run() {
+            Log.v(TAG, "Run");
 
             while(!stop) {
 
                 try {
+                    Log.v(TAG, "Sleep");
                     sleep(3000);
                 } catch (InterruptedException intE) {
                     Log.e(TAG, "Slider Interrupted", intE);
@@ -301,6 +323,7 @@ public class MainActivity extends Activity {
                 }
 
                 if(!stop) {
+                    Log.v(TAG, "While Loop");
 
                     if (swipeRight) {
                         if (stop)
@@ -323,9 +346,11 @@ public class MainActivity extends Activity {
                     }
                 }
             }
+            Log.v(TAG, "Run Return");
         }
 
         public void stopSlider() {
+            Log.v(TAG, "Stop Slider");
             stop = true;
         }
     }
@@ -579,20 +604,18 @@ public class MainActivity extends Activity {
                     break;
                 case BluetoothService.COMMAND_OK:
                     Log.v(TAG, "Command ok");
+                    // Inject a Tap event
                     mCurrGestures.createGesture(Gestures.TYPE_TAP);
                     break;
                 case BluetoothService.COMMAND_BACK:
                     Log.v(TAG, "Command back");
-                    //TODO Do something on BACK
                     break;
                 case BluetoothService.ANDROID_STOPPED:
                     Log.v(TAG, "Android App closed");
-                    // mbtService.setState(BluetoothService.STATE_NONE);
                     finish(); // close this application if Android application is down
                     break;
                 case BluetoothService.MESSAGE_CONNECTION_FAILED:
                     Log.v(TAG, "Failed Conn App Closing");
-                    // mbtService.setState(BluetoothService.STATE_NONE);
                     finish();
                     break;
             }
