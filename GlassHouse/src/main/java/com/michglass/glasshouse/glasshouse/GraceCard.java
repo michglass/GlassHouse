@@ -20,7 +20,7 @@ public class GraceCard extends Card {
         this.cardType = cardType;
     }
 
-    public GraceCardScrollerAdapter getAdapter() {
+    public GraceCardScrollerAdapter getNextAdapter() {
         return adapter;
     }
 

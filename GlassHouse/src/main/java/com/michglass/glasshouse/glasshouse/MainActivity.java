@@ -6,14 +6,11 @@ package com.michglass.glasshouse.glasshouse;
  */
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.res.Resources;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -29,8 +26,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
-import android.provider.MediaStore.*;
-import android.widget.Toast;
 
 import com.google.android.glass.media.CameraManager;
 import com.google.android.glass.widget.CardScrollView;
@@ -44,6 +39,7 @@ public class MainActivity extends Activity {
     // Debug
     private static final String TAG = "Main Activity";
 
+
     // Messages from BT
     private static final int CAMERA_REQ = 5;
     private static final int VIDEO_REQ = 6;
@@ -53,10 +49,10 @@ public class MainActivity extends Activity {
     private boolean mBound;
     private final Messenger clientMessenger = new Messenger(new ServiceHandler());
 
+
     // UI Variables
-    private CardScrollView mCardScrollView;
-    private Gestures mCurrGestures;
-    private Slider mCurrentSlider;
+    private GraceCardScrollView mCardScrollView;
+    private Gestures mCurrGestures = new Gestures();
     private Map<String, String> mContacts;
 
     private GraceCardScrollerAdapter mBaseCardsAdapter;
@@ -66,17 +62,7 @@ public class MainActivity extends Activity {
     private GraceCardScrollerAdapter mCommMessagesAdapter;
     private GraceCardScrollerAdapter mGameCardsAdapter;
     private GraceCardScrollerAdapter mCurrentAdapter;
-    private GraceCardScrollerAdapter mNextAdapter;
 
-    private static final String MEDIA = "Media";
-    private static final String COMM = "Comm";
-    private static final String GAMES = "Games";
-    private static final String CAMERA = "Camera";
-    private static final String VIDEO = "Video";
-    private static final String REDO = "Redo";
-    private static final String SAVE = "Save";
-    private static final String SEND = "Send";
-    private static final String BACK = "Back";
     /**for bluetooth messaging*/
     private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
 
@@ -88,6 +74,53 @@ public class MainActivity extends Activity {
      * On Destroy: Stop BT(only in one Activity)
      */
 
+    AdapterView.OnItemClickListener ScrollerListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            Log.v(TAG, "On Item Click");
+
+            GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
+            Log.v(TAG, graceCard.getText());
+
+            // null adapter means this card has no tap event so do nothing
+            if (graceCard.getNextAdapter() == null) {
+                Log.v(TAG, "Card Scroll Adapter NULL");
+                return;
+            }
+
+            // set the next adapter and stop the current slider
+            //mNextAdapter = graceCard.getNextAdapter();
+            mCurrentAdapter.getSlider().stopSlider();
+
+            // long ass switch for cards that have functions
+            final String cardText = graceCard.getText();
+            if (graceCard.getGraceCardType() == GraceCardType.CAMERA) {
+                takePicture();
+                return;
+            } else if (graceCard.getGraceCardType() == GraceCardType.VIDEO) {
+                recordVideo();
+                return;
+            } else if (graceCard.getGraceCardType() == GraceCardType.REDO) {
+                // remove screenshot from post media menu cards
+                mPostMediaCardsAdapter.popCardFront();
+            } else if (graceCard.getGraceCardType() == GraceCardType.SAVE) {
+                // save to disk, or whatever
+            } else if (graceCard.getGraceCardType() == GraceCardType.SEND) {
+                // launch contacts picker, send media to phone or whatever
+            } else if(graceCard.getGraceCardType() == GraceCardType.CONTACT) {
+                GraceContactCard contact = (GraceContactCard) graceCard;
+                bluetoothMessage.setNum(contact.phoneNumber);
+            }
+            else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
+                bluetoothMessage.setMessage(graceCard.getText());
+                sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
+                Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
+            }
+
+            switchHierarchy(graceCard.getNextAdapter());
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,16 +131,19 @@ public class MainActivity extends Activity {
 
         // initialize all hierarchy adapters and add cards to them
         buildScrollers();
-        mCurrentAdapter = mBaseCardsAdapter;
 
-        mCardScrollView = new CardScrollView(this);
-        mCardScrollView.setAdapter(mBaseCardsAdapter);
+
+
+        mCurrentAdapter = mBaseCardsAdapter;
+        mCardScrollView = new GraceCardScrollView(this, ScrollerListener);
+        mCardScrollView.setAdapter(mCurrentAdapter);
         mCardScrollView.activate(); // makes it work
 
-        mContacts = new TreeMap<String, String>();
-        mCurrGestures = new Gestures();
-        mCurrentSlider = new Slider(mBaseCardsAdapter.getCount());
-        Log.v(TAG, "Scroll View Size: " + mCardScrollView.getCount());
+
+        // mContacts = new TreeMap<String, String>();
+      //  mCurrGestures = new Gestures();
+      //  mCurrentSlider = new Slider(mBaseCardsAdapter.getCount());
+        //Log.v(TAG, "Scroll View Size: " + mCardScrollView.getCount());
         Log.v(TAG, "Adapter Size: " + mBaseCardsAdapter.getCount());
 
         // keep screen from dimming
@@ -115,10 +151,10 @@ public class MainActivity extends Activity {
 
         // start up the base menu cards and its slider
         setContentView(mCardScrollView);
-        mCurrentSlider.start();
+        mBaseCardsAdapter.getSlider().start();
 
         // implement any specific card behavior here, wrap it in a class though so this function isn't huge
-        mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+/*        mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.v(TAG, "On Item Click");
@@ -127,14 +163,14 @@ public class MainActivity extends Activity {
                 Log.v(TAG, graceCard.getText());
 
                 // null adapter means this card has no tap event so do nothing
-                if (graceCard.getAdapter() == null) {
+                if (graceCard.getNextAdapter() == null) {
                     Log.v(TAG, "Card Scroll Adapter NULL");
                     return;
                 }
 
                 // set the next adapter and stop the current slider
-                mNextAdapter = graceCard.getAdapter();
-                mCurrentSlider.stopSlider();
+                //mNextAdapter = graceCard.getNextAdapter();
+                mCurrentAdapter.getSlider().stopSlider();
 
                 // long ass switch for cards that have functions
                 final String cardText = graceCard.getText();
@@ -161,9 +197,9 @@ public class MainActivity extends Activity {
                     Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
                 }
 
-                switchHierarchy();
+                switchHierarchy(graceCard.getNextAdapter());
             }
-        });
+        });*/
 
         // grab contacts
         new AsyncTask<Void, Void, Void> () {
@@ -184,23 +220,26 @@ public class MainActivity extends Activity {
     }
 
     // sets current adapter to next menus adapter and sets current view to it and starts its respective slider
-    private void switchHierarchy() {
-
-        mCurrentAdapter = mNextAdapter;
+    private void switchHierarchy(GraceCardScrollerAdapter nextAdapter) {
+        if(nextAdapter.equals(null)){
+            return;
+        }
+        mCurrentAdapter = nextAdapter;
 
         // replace slider with a new one for our new hierarchy
-        mCurrGestures = new Gestures();
-        mCurrentSlider = new Slider(mCurrentAdapter.getCount());
+        //mCurrGestures = new Gestures();
+        //mCurrentSlider = new Slider(mCurrentAdapter.getCount());
 
         // switch out cards being displayed
         mCardScrollView.setAdapter(mCurrentAdapter);
-        mCardScrollView.activate();
 
-        // visual switch of hierarchy and start our slider
+        mCardScrollView.setSelection(0);
         mCurrentAdapter.notifyDataSetChanged();
-
-        // Start Running the new swipe loop
-        mCurrentSlider.start();
+        mCardScrollView.updateViews(false);
+        mCardScrollView.activate();
+        mCurrentAdapter.setSlider(new Slider(new Gestures()));
+        mCurrentAdapter.getSlider().setNumCards(mCurrentAdapter.getCount());
+        mCurrentAdapter.getSlider().start();
     }
 
     @Override
@@ -234,7 +273,7 @@ public class MainActivity extends Activity {
 
         // Stop Injecting
         mCurrGestures.stopInjecting();
-        mCurrentSlider.stopSlider();
+        mCurrentAdapter.getSlider().stopSlider();
         super.onStop();
     }
 
@@ -248,139 +287,64 @@ public class MainActivity extends Activity {
     }
 
     // create cards for each hierarchy, add to that's hierarchies adapter
-    private void buildScrollers() {
-        Log.v(TAG, "private void buildScrollers() called");
-        mBaseCardsAdapter = new GraceCardScrollerAdapter();
-        mMediaCardsAdapter = new GraceCardScrollerAdapter();
-        mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
-        mCommContactsAdapter = new GraceCardScrollerAdapter();
-        mCommMessagesAdapter = new GraceCardScrollerAdapter();
+            private void buildScrollers() {
+                Log.v(TAG, "private void buildScrollers() called");
+                mBaseCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mMediaCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mPostMediaCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mCommContactsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mCommMessagesAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mGameCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
 
-        // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Play a Game", GraceCardType.GAMES));
-        mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Exit Glassistance", GraceCardType.EXIT));
+                // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
+                mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
+                mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Play a Game", GraceCardType.GAMES));
+                mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Exit Glassistance", GraceCardType.EXIT));
+                mBaseCardsAdapter.getSlider().setNumCards(mBaseCardsAdapter.getCount());
 
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Record a Video", GraceCardType.VIDEO));
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
+                mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
+                mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Record a Video", GraceCardType.VIDEO));
+                mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
+                mMediaCardsAdapter.getSlider().setNumCards(mMediaCardsAdapter.getCount());
 
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Redo", GraceCardType.REDO));
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Save Media", GraceCardType.SAVE)); // loop back to main menu for now
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Send Media",GraceCardType.SEND)); // loop back to main menu for now
-        mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
-        Log.v(TAG, "Post MEdia Adapter Built");
+                mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Redo", GraceCardType.REDO));
+                mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Save Media", GraceCardType.SAVE)); // loop back to main menu for now
+                mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Send Media",GraceCardType.SEND)); // loop back to main menu for now
+                mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
+                mPostMediaCardsAdapter.getSlider().setNumCards(mPostMediaCardsAdapter.getCount());
+                Log.v(TAG, "Post MEdia Adapter Built");
 
-        /* **** below needs to be implemented still */
+                /* **** below needs to be implemented still */
 
-        // communication hierarchy
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
-        Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
-        //GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
-        Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
-        for(GraceContactCard C: GraceContactCard.contactList){
-            mCommContactsAdapter.pushCardBack(C);
-            Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
-        }
-        mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back to Main Menu", GraceCardType.BACK));
-
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'd like something to eat please.", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "Hi, how are you doing?", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mBaseCardsAdapter, "This message brought to you by the Google Glass!", GraceCardType.MESSAGE);
-        for(GraceMessageCard M: GraceMessageCard.messageList){
-            mCommMessagesAdapter.pushCardBack(M);
-            Log.v(TAG, "Message added to Adapter: " + M.Message);
-        }
-        mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Back to Contact List", GraceCardType.BACK));
-
-
-        // game hierarchy
-        mGameCardsAdapter = new GraceCardScrollerAdapter();
-    }
-
-    /**
-     * Slider Thread
-     * Loops through a Card ScrollView
-     * Sending Motion Events to Glass
-     */
-    private class Slider extends Thread {
-
-        // Debug
-        private final String TAG = "Slider Thread";
-
-        // Member vars
-        private int mCurrPosition;
-        private int mFinalPosition;
-        private boolean swipeRight;
-        private boolean swipeLeft;
-        private boolean stop;
-
-        /**
-         * Slider
-         * Set up Slider members
-         * @param numCards Size of the current CardScrollAdapter
-         *                 so the Slider knows the boundaries
-         */
-        public Slider(int numCards) {
-            mCurrPosition = 0;
-            mFinalPosition = numCards - 1;
-            swipeRight = true;
-            swipeLeft = false;
-            stop = false;
-            Log.v(TAG, "Final Pos Slider: " + mFinalPosition);
-        }
-        /**
-         * Run
-         */
-        @Override
-        public void run() {
-            Log.v(TAG, "Run");
-
-            while(!stop) {
-
-                try {
-                    Log.v(TAG, "Sleep");
-                    sleep(3000);
-                } catch (InterruptedException intE) {
-                    Log.e(TAG, "Slider Interrupted", intE);
-                    return;
+                // communication hierarchy
+                GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
+                Log.v(TAG, "Tim Wood contact added to adapter");
+                GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
+                GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+                GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
+                Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
+                for(GraceContactCard C: GraceContactCard.contactList){
+                    mCommContactsAdapter.pushCardBack(C);
+                    Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
                 }
+                mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back to Main Menu", GraceCardType.BACK));
+                mCommContactsAdapter.getSlider().setNumCards(mCommContactsAdapter.getCount());
 
-                if(!stop) {
-                    Log.v(TAG, "While Loop");
-
-                    if (swipeRight) {
-                        if (stop)
-                            return;
-                        mCurrGestures.createGesture(Gestures.TYPE_SWIPE_RIGHT);
-                        mCurrPosition++;
-                    } else if (swipeLeft) {
-                        if (stop)
-                            return;
-                        mCurrGestures.createGesture(Gestures.TYPE_SWIPE_LEFT);
-                        mCurrPosition--;
-                    }
-
-                    if (mCurrPosition == 0) {
-                        swipeRight = true;
-                        swipeLeft = false;
-                    } else if (mCurrPosition == mFinalPosition) {
-                        swipeLeft = true;
-                        swipeRight = false;
-                    }
+                GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'd like something to eat please.", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mBaseCardsAdapter, "Hi, how are you doing?", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mBaseCardsAdapter, "This message brought to you by the Google Glass!", GraceCardType.MESSAGE);
+                for(GraceMessageCard M: GraceMessageCard.messageList){
+                    mCommMessagesAdapter.pushCardBack(M);
+                    Log.v(TAG, "Message added to Adapter: " + M.Message);
                 }
+                mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Back to Contact List", GraceCardType.BACK));
+                mCommMessagesAdapter.getSlider().setNumCards(mCommMessagesAdapter.getCount());
+
+
+                Log.v(TAG, "Exiting buildScrollers()");
             }
-            Log.v(TAG, "Run Return");
-        }
 
-        public void stopSlider() {
-            Log.v(TAG, "Stop Slider");
-            stop = true;
-        }
-    }
 
     /**
      * On Activity Result
@@ -401,13 +365,13 @@ public class MainActivity extends Activity {
                 final String picturePath = intent.getStringExtra(CameraManager.EXTRA_PICTURE_FILE_PATH);
                 // for now this is not gonna work
                 // processPicture.execute(picturePath);
-                switchHierarchy();
+                switchHierarchy(null);
                 break;
             }
             case VIDEO_REQ:
             {
                 // Video video = (Video) intent.getExtras().get(CameraManager.EXTRA_VIDEO_FILE_PATH);
-                switchHierarchy();
+                switchHierarchy(null);
                 break;
             }
             default:
@@ -632,7 +596,7 @@ public class MainActivity extends Activity {
                 case BluetoothService.COMMAND_OK:
                     Log.v(TAG, "Command ok");
                     // Inject a Tap event
-                    mCurrGestures.createGesture(Gestures.TYPE_TAP);
+                    mCurrentAdapter.getSlider().getGestures().createGesture(Gestures.TYPE_TAP);
                     break;
                 case BluetoothService.COMMAND_BACK:
                     Log.v(TAG, "Command back");

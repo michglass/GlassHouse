@@ -1,12 +1,16 @@
 package com.michglass.glasshouse.glasshouse;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
+import android.renderscript.Program;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.android.glass.app.Card;
 import com.google.android.glass.widget.CardScrollAdapter;
+import com.google.android.glass.widget.CardScrollView;
 
 import java.util.ArrayList;
 
@@ -22,9 +26,17 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
     // list of Cards
     private ArrayList<GraceCard> mCardList = new ArrayList<GraceCard>();
 
+
+    // associated cardview and slider
+    private GraceCardScrollView view;
+
+    private Slider slider;
+
     // Constructor
-    public GraceCardScrollerAdapter() {
+    public GraceCardScrollerAdapter(GraceCardScrollView _view, Slider _slider) {
         super();
+        this.setView(_view);
+        this.setSlider(_slider);
     }
 
     public void popCardFront() { mCardList.remove(0); }
@@ -33,12 +45,29 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
     public void pushCardFront(GraceCard card) { mCardList.add(0, card);}
 
     /**
-     * Set and get the card list
+     * GETTERS AND SETTERS
      */
     public void setCardList(ArrayList<GraceCard> cards) {
         this.mCardList = cards;
     }
     public ArrayList<GraceCard> getCardList() { return this.mCardList; }
+
+    public GraceCardScrollView getView() {
+        return view;
+    }
+
+    public void setView(GraceCardScrollView view) {
+        view.setAdapter(this);
+        this.view = view;
+    }
+
+    public Slider getSlider() {
+        return slider;
+    }
+
+    public void setSlider(Slider slider) {
+        this.slider = slider;
+    }
 
     /*
         Adapter Methods
