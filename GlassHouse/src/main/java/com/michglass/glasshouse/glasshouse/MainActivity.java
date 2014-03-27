@@ -272,7 +272,7 @@ public class MainActivity extends Activity {
         }
 
         // Stop Injecting
-        mCurrGestures.stopInjecting();
+        mCurrentAdapter.getSlider().getGestures().stopInjecting();
         mCurrentAdapter.getSlider().stopSlider();
         super.onStop();
     }
@@ -312,7 +312,7 @@ public class MainActivity extends Activity {
                 mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Send Media",GraceCardType.SEND)); // loop back to main menu for now
                 mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
                 mPostMediaCardsAdapter.getSlider().setNumCards(mPostMediaCardsAdapter.getCount());
-                Log.v(TAG, "Post MEdia Adapter Built");
+                Log.v(TAG, "Post Media Adapter Built");
 
                 /* **** below needs to be implemented still */
 
