@@ -34,7 +34,7 @@ public class TicTacToeActivity extends Activity {
     private boolean gameOver;
     private Handler delayHandler = new Handler();
     private List<Card> mCards;
-    private CardScrollView mCardScrollView;
+    private GraceCardScrollView mCardScrollView;
     private Handler gameHandler;
     private final Context mContext = this;
     private ExampleCardScrollAdapter adapter;
@@ -54,7 +54,7 @@ public class TicTacToeActivity extends Activity {
         mCards = new ArrayList<Card>();
         mCards.add(new Card(this).setText(START_GAME));
         mCards.add(new Card(this).setText(GO_BACK));
-        mCardScrollView = new CardScrollView(this);
+        mCardScrollView = new GraceCardScrollView(this, null);
         adapter = new ExampleCardScrollAdapter();
         mCardScrollView.setAdapter(adapter);
         mCardScrollView.activate();

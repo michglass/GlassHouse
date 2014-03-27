@@ -309,8 +309,8 @@ public class MainActivity extends Activity {
                 mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
                 mCommContactsAdapter.getSlider().setNumCards(mCommContactsAdapter.getCount());
 
-                GraceMessageCard.addCard(this, mBaseCardsAdapter, "The drive today was so long!", GraceCardType.MESSAGE);
-                GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'm pretty tired", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mBaseCardsAdapter, "I love you.", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mBaseCardsAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
                 GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
                 GraceMessageCard.addCard(this, mBaseCardsAdapter, "What's for dinner?", GraceCardType.MESSAGE);
                 for(GraceMessageCard M: GraceMessageCard.messageList){
