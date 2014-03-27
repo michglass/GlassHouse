@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
 
     // Debug
     private static final String TAG = "Main Activity";
+    public Context context = this;
 
 
     // Messages from BT
@@ -52,6 +53,8 @@ public class MainActivity extends Activity {
 
     // UI Variables
     private GraceCardScrollView mCardScrollView;
+    private GraceCard lastSelectedCard = new GraceCard(this, null, "blah", GraceCardType.NONE);
+
     private Gestures mCurrGestures = new Gestures();
     private Map<String, String> mContacts;
 
@@ -80,6 +83,7 @@ public class MainActivity extends Activity {
             Log.v(TAG, "On Item Click");
 
             GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
+            lastSelectedCard = graceCard;
             Log.v(TAG, graceCard.getText());
 
             // null adapter means this card has no tap event so do nothing
@@ -116,7 +120,17 @@ public class MainActivity extends Activity {
                 sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
             }
+            else if(graceCard.getGraceCardType() == GraceCardType.TICTACTOE){
+                //Launch Tic-Tac-Toe Activity
+                Intent intent = new Intent(context, TicTacToeActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                context.startActivity(intent);
+                return;
 
+            }
+            else if(graceCard.getGraceCardType() == GraceCardType.EXIT){
+                finish();
+            }
             switchHierarchy(graceCard.getNextAdapter());
         }
     };
@@ -152,54 +166,6 @@ public class MainActivity extends Activity {
         // start up the base menu cards and its slider
         setContentView(mCardScrollView);
         mBaseCardsAdapter.getSlider().start();
-
-        // implement any specific card behavior here, wrap it in a class though so this function isn't huge
-/*        mCardScrollView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.v(TAG, "On Item Click");
-
-                GraceCard graceCard = (GraceCard) mCurrentAdapter.getItem(position);
-                Log.v(TAG, graceCard.getText());
-
-                // null adapter means this card has no tap event so do nothing
-                if (graceCard.getNextAdapter() == null) {
-                    Log.v(TAG, "Card Scroll Adapter NULL");
-                    return;
-                }
-
-                // set the next adapter and stop the current slider
-                //mNextAdapter = graceCard.getNextAdapter();
-                mCurrentAdapter.getSlider().stopSlider();
-
-                // long ass switch for cards that have functions
-                final String cardText = graceCard.getText();
-                if (graceCard.getGraceCardType() == GraceCardType.CAMERA) {
-                    takePicture();
-                    return;
-                } else if (graceCard.getGraceCardType() == GraceCardType.VIDEO) {
-                    recordVideo();
-                    return;
-                } else if (graceCard.getGraceCardType() == GraceCardType.REDO) {
-                    // remove screenshot from post media menu cards
-                    mPostMediaCardsAdapter.popCardFront();
-                } else if (graceCard.getGraceCardType() == GraceCardType.SAVE) {
-                    // save to disk, or whatever
-                } else if (graceCard.getGraceCardType() == GraceCardType.SEND) {
-                    // launch contacts picker, send media to phone or whatever
-                } else if(graceCard.getGraceCardType() == GraceCardType.CONTACT) {
-                    GraceContactCard contact = (GraceContactCard) graceCard;
-                    bluetoothMessage.setNum(contact.phoneNumber);
-                }
-                else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
-                    bluetoothMessage.setMessage(graceCard.getText());
-                    sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
-                    Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
-                }
-
-                switchHierarchy(graceCard.getNextAdapter());
-            }
-        });*/
 
         // grab contacts
         new AsyncTask<Void, Void, Void> () {
@@ -249,6 +215,7 @@ public class MainActivity extends Activity {
 
         // Bind this Activity to the BT Service
         if(!mBound) {
+            //TODO for Tic
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
@@ -261,11 +228,23 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        Log.v(TAG, "On Resume");
+        if(!lastSelectedCard.equals(null) &&
+           lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE)){
+            switchHierarchy(lastSelectedCard.getNextAdapter());
+        }
+    }
+
+
+    @Override
     public void onStop() {
         Log.v(TAG, "On Stop");
 
         // Unbind from BT Service
         if(mBound) {
+            //TODO For tic tac
             sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
             unbindService(mConnection);
             mBound = false;
@@ -298,8 +277,8 @@ public class MainActivity extends Activity {
 
                 // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
                 mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
-                mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Play a Game", GraceCardType.GAMES));
-                mBaseCardsAdapter.pushCardBack(new GraceCard(this, null, "Exit Glassistance", GraceCardType.EXIT));
+                mBaseCardsAdapter.pushCardBack(new GraceCard(this, mGameCardsAdapter, "Play a Game", GraceCardType.GAMES));
+                mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Exit Application", GraceCardType.EXIT));
                 mBaseCardsAdapter.getSlider().setNumCards(mBaseCardsAdapter.getCount());
 
                 mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
@@ -327,7 +306,7 @@ public class MainActivity extends Activity {
                     mCommContactsAdapter.pushCardBack(C);
                     Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
                 }
-                mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back to Main Menu", GraceCardType.BACK));
+                mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
                 mCommContactsAdapter.getSlider().setNumCards(mCommContactsAdapter.getCount());
 
                 GraceMessageCard.addCard(this, mBaseCardsAdapter, "I'd like something to eat please.", GraceCardType.MESSAGE);
@@ -340,6 +319,9 @@ public class MainActivity extends Activity {
                 }
                 mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Back to Contact List", GraceCardType.BACK));
                 mCommMessagesAdapter.getSlider().setNumCards(mCommMessagesAdapter.getCount());
+
+                mGameCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Tic-Tac-Toe", GraceCardType.TICTACTOE));
+                mGameCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
 
 
                 Log.v(TAG, "Exiting buildScrollers()");
@@ -491,6 +473,7 @@ public class MainActivity extends Activity {
      * ServiceConnection
      * Callback Methods that get called when Client binds to Service
      */
+    //TODO Copy and Paste this into TCT activity
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
