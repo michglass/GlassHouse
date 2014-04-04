@@ -69,7 +69,7 @@ public class GameSurface extends SurfaceView {
      * @param strokeWidth stroke Width
      * @return Paint
      */
-    public Paint initPaint(int color, Paint.Style style, int strokeWidth) {
+     private Paint initPaint(int color, Paint.Style style, int strokeWidth) {
         Paint p = new Paint();
         p.setColor(color);
         p.setStyle(style);
@@ -82,7 +82,7 @@ public class GameSurface extends SurfaceView {
      * @param color Color of Paint
      * @return Paint Object
      */
-    public Paint initPaint(int color) {
+    private Paint initPaint(int color) {
         Paint p = new Paint();
         p.setColor(color);
         return p;
@@ -91,7 +91,7 @@ public class GameSurface extends SurfaceView {
      * Get Rectangle
      * Get a rectangle with
      */
-    public Rect getRectangle() {
+    private Rect getRectangle() {
         return new Rect();
     }
 

@@ -1,7 +1,5 @@
 package com.michglass.glasshouse.glasshouse;
 
-import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -73,11 +71,13 @@ public class Slider extends Thread {
     private boolean stop;
     private Gestures gestures;
 
+    // Timer Variable
+    private int TIMER = 3000;
+
     /**
      * Slider
      * Set up Slider members
-     * @param numCards Size of the current CardScrollAdapter
-     *                 so the Slider knows the boundaries
+     * @param gestures Gesture object that will simulate the Motion Events
      */
     public Slider(Gestures gestures) {
         mCurrPosition = 0;
@@ -114,7 +114,7 @@ public class Slider extends Thread {
 
             try {
                 Log.v(TAG, "Sleep");
-                sleep(3000);
+                sleep(TIMER);
             } catch (InterruptedException intE) {
                 Log.e(TAG, "Slider Interrupted", intE);
                 return;

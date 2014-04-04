@@ -121,12 +121,11 @@ public class MainActivity extends Activity {
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
             }
             else if(graceCard.getGraceCardType() == GraceCardType.TICTACTOE){
-                //Launch Tic-Tac-Toe Activity
+                // Launch Tic-Tac-Toe Activity
                 Intent intent = new Intent(context, TicTacToeActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 context.startActivity(intent);
                 return;
-
             }
             else if(graceCard.getGraceCardType() == GraceCardType.EXIT){
                 finish();
@@ -141,7 +140,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Create");
 
         // Start the BT Service
-        startService(new Intent(this, BluetoothService.class));
+        // startService(new Intent(this, BluetoothService.class));
 
         // initialize all hierarchy adapters and add cards to them
         buildScrollers();
@@ -242,14 +241,6 @@ public class MainActivity extends Activity {
     public void onStop() {
         Log.v(TAG, "On Stop");
 
-        // Unbind from BT Service
-        if(mBound) {
-            //TODO For tic tac
-            sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
-            unbindService(mConnection);
-            mBound = false;
-        }
-
         // Stop Injecting
         mCurrGestures.stopInjecting();
         mCurrentAdapter.getSlider().stopSlider();
@@ -261,8 +252,15 @@ public class MainActivity extends Activity {
         super.onDestroy();
         Log.v(TAG, "On Destroy");
 
+        // Unbind from BT Service
+        if(mBound) {
+            //TODO For tic tac
+            sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
+            unbindService(mConnection);
+            mBound = false;
+        }
         // Stop the BT Service only in the component that calls startservice() !!
-        stopService(new Intent(this, BluetoothService.class));
+        // stopService(new Intent(this, BluetoothService.class));
     }
 
     // create cards for each hierarchy, add to that's hierarchies adapter
@@ -563,12 +561,17 @@ public class MainActivity extends Activity {
                     switch (msg.arg1) {
                         case BluetoothService.STATE_CONNECTED:
                             Log.v(TAG, "state connected");
+                            //TODO Start sliding only here! User shouldn't be able to interact with
+                            //TODO UI before
                             break;
                         case BluetoothService.STATE_CONNECTING:
                             Log.v(TAG, "state connecting");
                             break;
                         case BluetoothService.STATE_NONE:
                             Log.v(TAG, "state none");
+                            break;
+                        case BluetoothService.STATE_LISTENING:
+                            Log.v(TAG, "State Listening");
                             break;
                     }
                     break;
@@ -586,11 +589,9 @@ public class MainActivity extends Activity {
                     break;
                 case BluetoothService.ANDROID_STOPPED:
                     Log.v(TAG, "Android App closed");
-                    finish(); // close this application if Android application is down
-                    break;
-                case BluetoothService.MESSAGE_CONNECTION_FAILED:
-                    Log.v(TAG, "Failed Conn App Closing");
-                    finish();
+                    sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.MESSAGE_RESTART);
+                    //TODO Glass starts listening to incoming requests again, do sth to UI
+                    //TODO Splash Screen or similar, to stop client from interaction with UI
                     break;
             }
         }
