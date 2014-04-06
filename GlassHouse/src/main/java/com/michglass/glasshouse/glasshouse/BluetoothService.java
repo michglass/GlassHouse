@@ -197,6 +197,7 @@ public class BluetoothService extends Service {
                 case MESSAGE_RESTART:
                     Log.v(TAG, "Restart Listening");
                     restartListeningToIncomingRequests();
+                    break;
             }
         }
     }
@@ -268,24 +269,6 @@ public class BluetoothService extends Service {
 
         Log.v(TAG, "Listen to incoming Requests");
 
-        // Close all Threads trying to establish a connection
-        if(mConnectThread != null) {
-            mConnectThread.cancel();
-            mConnectThread = null;
-        }
-
-        // Close Threads managing a connection
-        if(mConnectedThread != null) {
-            mConnectedThread.cancel();
-            mConnectedThread = null;
-        }
-
-        // Close Threads listening to conection requests
-        if(mAcceptThread != null) {
-            mAcceptThread.cancel();
-            mAcceptThread = null;
-        }
-
         // Start listening to incoming requests
         mAcceptThread = new AcceptThread(btAdapter);
         mAcceptThread.start();
@@ -299,12 +282,6 @@ public class BluetoothService extends Service {
      */
     public void manageConnection(BluetoothSocket btSocket) {
         Log.v(TAG, "Manage Connection");
-
-        // Cancel thread currently running a connection
-        if(mConnectedThread != null) {
-            mConnectedThread.cancel(); // closes Bluetooth socket
-            mConnectedThread = null;
-        }
 
         // Start thread to manage the connection
         mConnectedThread = new ConnectedThread(btSocket);
@@ -494,18 +471,11 @@ public class BluetoothService extends Service {
                 mmBtSocket.connect();
             } catch (IOException connectException) {
 
+                Log.v(TAG, "Unable to Connect");
+
                 // unable to connect, start listening to incoming requests
                 connected = false;
                 listenToIncomingRequests(mbtAdapter);
-
-                // try closing socket
-                Log.v(TAG, "Unable to Connect");
-                try {
-                    Log.v(TAG, "Try Closing Socket");
-                    mmBtSocket.close();
-                } catch (IOException ioE) {
-                    Log.e(TAG, "Closing Socket Failed");
-                }
             }
 
             if(connected) {
@@ -591,13 +561,6 @@ public class BluetoothService extends Service {
                     Log.v(TAG, "Connection Accepted");
                     // start managing connection
                     manageConnection(btSocket);
-                    // Server Socket no longer needed
-                    try {
-                        mBTServerSocket.close();
-                    } catch (IOException ioE) {
-                        Log.e(TAG, "Closing Server Socket failed", ioE);
-                        break;
-                    }
                     // break loop if connection successful
                     break;
                 }

@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Create");
 
         // Start the BT Service
-        // startService(new Intent(this, BluetoothService.class));
+        startService(new Intent(this, BluetoothService.class));
 
         // initialize all hierarchy adapters and add cards to them
         buildScrollers();
@@ -260,7 +260,7 @@ public class MainActivity extends Activity {
             mBound = false;
         }
         // Stop the BT Service only in the component that calls startservice() !!
-        // stopService(new Intent(this, BluetoothService.class));
+        stopService(new Intent(this, BluetoothService.class));
     }
 
     // create cards for each hierarchy, add to that's hierarchies adapter
