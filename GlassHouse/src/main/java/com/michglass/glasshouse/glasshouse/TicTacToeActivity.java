@@ -1,16 +1,10 @@
 package com.michglass.glasshouse.glasshouse;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -125,7 +119,19 @@ public class TicTacToeActivity extends Activity {
             mDrawingLogic.pauseGame();
     }
 
-    // Set Listener
+    /**
+     * Game Utility Functions
+     * Card Scroll View Listener: Handles the events before the game and starts the game
+     * On Key Down: For handling tap events when the user makes a move
+     * Game Handler: Gets notified when the game is over
+     * Delay Runnable: Delay game for a bit after game is over
+     */
+
+    /**
+     * On Item Click Listener
+     * Handles the Card Scroll View before the game starts
+     * @return Item click listener
+     */
     private AdapterView.OnItemClickListener setCardScrollViewListener() {
 
         return new AdapterView.OnItemClickListener() {
@@ -152,11 +158,19 @@ public class TicTacToeActivity extends Activity {
             }
         };
     }
+    /**
+     * On Key Down
+     * Functions for making a move during the game and selecting a card before the game
+     * @param keycode Event code
+     * @param event Event that occured (only interesting when tap event)
+     * @return true if we handled the event
+     */
     @Override
     public boolean onKeyDown(int keycode, KeyEvent event){
         Log.v(TAG, "On Key Down");
 
         if(keycode == KeyEvent.KEYCODE_DPAD_CENTER) {
+            // if the game isn't over then we make a move
             if(!gameOver) {
                 Log.v(TAG, "Make Move");
                 mDrawingLogic.makeMove(GameSurface.PLAYER_ID);
@@ -165,7 +179,11 @@ public class TicTacToeActivity extends Activity {
         }
         return super.onKeyDown(keycode, event);
     }
-    // set up the game handler
+    /**
+     * Set up Game Handler
+     * The Game Handler receives a message when the game is over
+     * @return Handler game handler
+     */
     private Handler setUpGameHandler() {
 
         return new Handler(new Handler.Callback() {
@@ -181,6 +199,10 @@ public class TicTacToeActivity extends Activity {
             }
         });
     }
+    /**
+     * Delay Runnable
+     * After the Game is over, delay for a little bit
+     */
     private Runnable delay = new Runnable() {
         private boolean keepRunning = true;
         @Override
@@ -189,10 +211,10 @@ public class TicTacToeActivity extends Activity {
 
             if(keepRunning) {
                 delayHandler.postDelayed(this, 3000);
-
-                finish();
-                keepRunning = false;
             }
+            if(!keepRunning)
+                finish();
+            keepRunning = false;
             Log.v(TAG, "Run Return");
         }
     };

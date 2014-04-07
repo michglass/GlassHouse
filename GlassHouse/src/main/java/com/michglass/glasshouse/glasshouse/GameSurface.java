@@ -46,7 +46,7 @@ public class GameSurface extends SurfaceView {
         Log.v(TAG, "Constructor");
 
         // set up the game rectangle
-        mRectangle = getRectangle();
+        mRectangle = new Rect();
 
         // set up different paint objects
         mGridPaint = initPaint(Color.BLACK, Paint.Style.STROKE, 8);
@@ -88,19 +88,25 @@ public class GameSurface extends SurfaceView {
         return p;
     }
     /**
-     * Get Rectangle
-     * Get a rectangle with
+     * Init Paint
+     * Init a Paint Object with color and text size
+     * @param color Color for paint
+     * @param textsize Text size
+     *
      */
-    private Rect getRectangle() {
-        return new Rect();
+    private Paint initPaint(int color, float textsize) {
+        Paint p = new Paint();
+        p.setColor(color);
+        p.setTextSize(textsize);
+        return p;
     }
-
 
     /**
      * Drawing Methods
      * Draw Field: Draws the TicTacToe Grid
      * Draw Rectangle: Highlight the current game cell with a rectangle
      * Draw Symbols: Draw the Game Symbols (green and black circles)
+     * Draw Game Over: Draws a text indicating that the game is over
      */
 
     /**

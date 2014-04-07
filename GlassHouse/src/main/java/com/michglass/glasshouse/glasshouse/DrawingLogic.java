@@ -299,7 +299,9 @@ public class DrawingLogic {
                                 Paint p = new Paint();
                                 p.setTextSize(100f);
                                 p.setColor(Color.BLUE);
-                                mCanvas.drawText("You Win!", 50, FIELD_HEIGHT / 2, p);
+                                p.setTextAlign(Paint.Align.CENTER);
+                                mCanvas.drawText("You Win!", FIELD_WIDTH/2,
+                                        (FIELD_HEIGHT / 2) - ((p.descent() + p.ascent()) / 2), p);
                                 stopGameThread();
                                 stopAIThread();
                                 stopFillCellThread();
@@ -321,7 +323,9 @@ public class DrawingLogic {
                                 Paint p = new Paint();
                                 p.setTextSize(100f);
                                 p.setColor(Color.BLUE);
-                                mCanvas.drawText("Glass Wins!", 50, FIELD_HEIGHT / 2, p);
+                                p.setTextAlign(Paint.Align.CENTER);
+                                mCanvas.drawText("Glass Wins!", FIELD_WIDTH/2,
+                                        (FIELD_HEIGHT / 2) - ((p.descent() + p.ascent()) / 2), p);
                                 stopGameThread();
                                 stopAIThread();
                                 stopFillCellThread();
