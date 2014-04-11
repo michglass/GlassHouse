@@ -29,7 +29,7 @@ public class Gestures {
     private int GESTURE_TYPE;
 
     // Thread that injects a motion event
-    InstThread instrThread;
+    private InstThread instrThread;
 
     // keep Instrumentation Thread running
     private boolean mKeepRunning;

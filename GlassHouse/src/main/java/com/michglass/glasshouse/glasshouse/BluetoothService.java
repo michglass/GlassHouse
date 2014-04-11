@@ -3,6 +3,7 @@ package com.michglass.glasshouse.glasshouse;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -11,7 +12,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.IOException;
@@ -27,21 +27,24 @@ import java.util.UUID;
  */
 public class BluetoothService extends Service {
 
+    // Device names
+    // "Cone" = Danny
+    // "SCH-I545" = Tim
+    // "Galaxy NexusCDMA 2" = Oliver
+
     // Debug
     private static final String TAG = "Bluetooth Service";
 
     // Bluetooth Vars
     private final BluetoothAdapter mbtAdapter = BluetoothAdapter.getDefaultAdapter();
     private BluetoothDevice mbtDevice;
-    private static final String DEVICE_NAME = "Galaxy NexusCDMA 2";
-    // "Cone" = Danny
-    // "SCH-I545" = Tim
-    // "Galaxy NexusCDMA 2" = Oliver
+
     private int mCurrState;
 
     // Thread that initiates the connection and Thread that manages connection
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
+    private AcceptThread mAcceptThread;
 
     // unique ID for the app (same as on the android phone)
     private static final UUID btUUID = UUID.fromString("bfdd94e0-9a5e-11e3-a5e2-0800200c9a66");
@@ -51,20 +54,18 @@ public class BluetoothService extends Service {
     public static final int STATE_NONE = 0; // doing nothing
     public static final int STATE_CONNECTING = 1; // connecting
     public static final int STATE_CONNECTED = 2; // connected
+    public static final int STATE_LISTENING = 17; // listening
     // Messages for Main Activity
     public static final int MESSAGE_STATE_CHANGE = 3; // indicates connection state change (debug)
     public static final int MESSAGE_INCOMING = 4; // message with string content (only for debug)
-    public static final int MESSAGE_CONNECTION_FAILED = 5;
+    public static final int MESSAGE_RESTART = 5;
+
     // Indicates that Android has stopped
     public static final int ANDROID_STOPPED = 8; //( == THIS_STOPPED on Android) indicates if the android app is still running
     public static final int THIS_STOPPED = 9; // (== GLASS_STOPPED on Android) indicates if this app has stopped
     // Commands for Glass
     public static final int COMMAND_OK = 10;
     public static final int COMMAND_BACK = 11;
-
-    // Extra is the key for the string message that gets put into the bundle
-    // the bundle is send to the activity which can get the string message with this key
-    public static final String EXTRA_MESSAGE = "com.mglass.alphagraceapp.app.EXTRA_MESSAGE";
 
     // Service variables
     public static final int REGISTER_CLIENT = 12;
@@ -109,7 +110,7 @@ public class BluetoothService extends Service {
         Log.v(TAG, "On Start Command: " + startId);
 
         // start connection with android device
-        connect();
+        // connect();
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -120,6 +121,7 @@ public class BluetoothService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.v(TAG, "On Bind");
+        connect();
         return mBluetoothServiceMessenger.getBinder();
     }
     /**
@@ -191,7 +193,10 @@ public class BluetoothService extends Service {
                     Log.v(TAG, "Unregister Client");
                     BluetoothService.BOUND_COUNT--;
                     Log.v(TAG, "Bound Clients: " + BluetoothService.BOUND_COUNT);
-                    //sendMessageToClient(TestService.UNREGISTER_CLIENT);
+                    break;
+                case MESSAGE_RESTART:
+                    Log.v(TAG, "Restart Listening");
+                    restartListeningToIncomingRequests();
                     break;
             }
         }
@@ -255,24 +260,28 @@ public class BluetoothService extends Service {
         setState(STATE_CONNECTING);
     }
     /**
+     * Listen to incoming requests
+     * If connection failed Glass is set up as a Server
+     * Listens to incoming connection requests from Android
+     * @param btAdapter The adapter for setting up the Server Socket in the Accept Thread
+     */
+    private void listenToIncomingRequests(BluetoothAdapter btAdapter) {
+
+        Log.v(TAG, "Listen to incoming Requests");
+
+        // Start listening to incoming requests
+        mAcceptThread = new AcceptThread(btAdapter);
+        mAcceptThread.start();
+
+        setState(STATE_LISTENING);
+    }
+    /**
      * Manage Connection
      * Start ConnectedThread
      * @param btSocket Socket that helps to get I/O streams
      */
     public void manageConnection(BluetoothSocket btSocket) {
         Log.v(TAG, "Manage Connection");
-/*
-        // Cancel thread currently setting up a connection
-        if(mConnectThread != null) {
-            mConnectThread.cancel();
-            mConnectThread = null;
-        }
-*/
-        // Cancel thread currently running a connection
-        if(mConnectedThread != null) {
-            mConnectedThread.cancel(); // closes Bluetooth socket
-            mConnectedThread = null;
-        }
 
         // Start thread to manage the connection
         mConnectedThread = new ConnectedThread(btSocket);
@@ -295,6 +304,12 @@ public class BluetoothService extends Service {
             mConnectThread = null;
         }
 
+        // cancel accept thread
+        if(mAcceptThread != null) {
+            mAcceptThread.cancel();
+            mAcceptThread = null;
+        }
+
         // cancel thread running the connection
         if(mConnectedThread != null) {
             mConnectedThread.cancel();
@@ -304,6 +319,18 @@ public class BluetoothService extends Service {
         // all threads stopped, set state to none and send message to UI
         if(mCurrState != BluetoothService.STATE_NONE)
             setState(STATE_NONE);
+    }
+    /**
+     * Restart
+     * If writing to Glass fails (Glass app shut down) restart in listening mode
+     */
+    public void restartListeningToIncomingRequests() {
+        Log.v(TAG, "Restart Connection");
+        // cancel all running threads
+        this.disconnect();
+
+        // try listening again
+        this.listenToIncomingRequests(mbtAdapter);
     }
     /**
      * Write
@@ -356,6 +383,14 @@ public class BluetoothService extends Service {
         Message msg = new Message();
         msg.what = BluetoothService.MESSAGE_STATE_CHANGE;
         msg.arg1 = toState;
+
+        if(mClientMessenger != null) {
+            try {
+                mClientMessenger.send(msg);
+            } catch (RemoteException remE) {
+                Log.e(TAG, "Couldn't contact client", remE);
+            }
+        }
     }
     /**
      * Query Devices
@@ -375,9 +410,6 @@ public class BluetoothService extends Service {
                     // if device is found save it in member var
                     Log.v(TAG, "Paired Device: "+ btDevice.getName());
                     mbtDevice = btDevice;
-                    /*if(btDevice.getName().equals(DEVICE_NAME)) {
-                        mbtDevice = btDevice;
-                    }*/
                 }
             } else {
                 Log.v(TAG, "No devices found");
@@ -428,40 +460,29 @@ public class BluetoothService extends Service {
          */
         @Override
         public void run() {
-            int i = 0;
+
+            boolean connected = true; // indicates if we connected successfully
+
             Log.v(TAG, "Run");
             // Connect device through Socket
             // Blocking call!
-            while(!mmBtSocket.isConnected()) {
-                try {
-                    Log.v(TAG, "Try connecting through socket");
-                    mmBtSocket.connect();
-                } catch (IOException connectException) {
-                    // unable to connect, try closing socket
-                    Log.v(TAG, "Unable to Connect");
-                    if(i == 5) {
-                        Log.v(TAG, "Connection request timed out, Shut Down");
-                        try {
-                            // send message to activity
-                            sendMessageToClient(BluetoothService.MESSAGE_CONNECTION_FAILED);
+            try {
+                Log.v(TAG, "Try connecting through socket");
+                mmBtSocket.connect();
+            } catch (IOException connectException) {
 
-                            // close Socket
-                            mmBtSocket.close();
-                        } catch (IOException closeException) {
-                            Log.e(TAG, "Closing Socket Failed", closeException);
-                        }
-                        Log.v(TAG, "Run Return after Fail");
-                        return;
-                    } else {
-                        Log.v(TAG, "Try connecting again in 3sec");
-                        i++;
-                        SystemClock.sleep(3000);
-                    }
-                }
+                Log.v(TAG, "Unable to Connect");
+
+                // unable to connect, start listening to incoming requests
+                connected = false;
+                listenToIncomingRequests(mbtAdapter);
             }
-            // connection established, manage connection
-            manageConnection(mmBtSocket);
-            Log.v(TAG, "Run Return after Success");
+
+            if(connected) {
+                // connection established, manage connection
+                manageConnection(mmBtSocket);
+                Log.v(TAG, "Run Return after Success");
+            }
         }
         /**
          * Cancel
@@ -473,6 +494,89 @@ public class BluetoothService extends Service {
                 mmBtSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "Closing Socket Failed", e);
+            }
+        }
+    }
+    /**
+     * Accept Thread
+     * Listens to incoming connection requests
+     * Initiates ConnectedThread
+     */
+    private class AcceptThread extends Thread {
+
+        // Debug
+        private static final String TAG = "Accept Thread";
+
+        // Bluetooth variables
+        private final BluetoothServerSocket mBTServerSocket; // only used to listen for incoming requests
+        private final BluetoothAdapter mBTAdapter;
+
+        /**
+         * Constructor
+         * Set up BTAdapter
+         * @param btAdapter Bluetooth Adapter
+         */
+        public AcceptThread(BluetoothAdapter btAdapter) {
+            Log.v(TAG, "Constructor");
+
+            mBTAdapter = btAdapter;
+
+            // mmBTServerSocket is final -> use temp socket
+            BluetoothServerSocket tempServSocket = null;
+            try {
+                tempServSocket = mBTAdapter.
+                        listenUsingRfcommWithServiceRecord("Android Bluetooth", btUUID);
+            } catch (IOException ioE) {
+                Log.e(TAG, "Can't set up Server Socket", ioE);
+            }
+            // if successful assign mmBTServerSocket
+            mBTServerSocket = tempServSocket;
+        }
+        /**
+         * Run
+         * Listen to an incoming connection request
+         * Start ConnectedThread if connection successful
+         */
+        @Override
+        public void run() {
+            Log.v(TAG, "Run");
+
+            // set up socket that will manage the connection
+            BluetoothSocket btSocket;
+
+            // keep listening until socket returned by accept or exception occurs
+            while (true) {
+
+                try {
+                    Log.v(TAG, "Listen to incoming request");
+                    btSocket = mBTServerSocket.accept();
+                } catch (IOException ioE) {
+                    Log.e(TAG, "Listening failed", ioE);
+                    Log.v(TAG, "Run Return Fail");
+                    break;
+                }
+                // if a connection was accepted
+                // btSocket is already connected (no need to call connect())
+                if(btSocket != null) {
+                    Log.v(TAG, "Connection Accepted");
+                    // start managing connection
+                    manageConnection(btSocket);
+                    // break loop if connection successful
+                    break;
+                }
+            }
+            Log.v(TAG, "Run Return");
+        }
+        /**
+         * Cancel
+         * Closes the Server Socket (listening socket)
+         */
+        public void cancel() {
+            try {
+                Log.v(TAG, "Try closing Server Socket");
+                mBTServerSocket.close();
+            } catch (IOException ioE) {
+                Log.e(TAG, "Closing Server Socket failed", ioE);
             }
         }
     }
@@ -562,6 +666,11 @@ public class BluetoothService extends Service {
                 mmOutStream.write(buffer);
             } catch (IOException e) {
                 Log.e(TAG, "Failed writing to Android", e);
+
+                // tell Glass that Android has stopped
+                sendMessageToClient(ANDROID_STOPPED);
+                // initiate to listen to incoming requests again
+                restartListeningToIncomingRequests();
             }
         }
         public void writeString(String msg) {

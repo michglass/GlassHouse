@@ -1,16 +1,10 @@
 package com.michglass.glasshouse.glasshouse;
 
-import android.app.Activity;
-import android.app.Application;
-import android.content.Context;
-import android.renderscript.Program;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.google.android.glass.app.Card;
 import com.google.android.glass.widget.CardScrollAdapter;
-import com.google.android.glass.widget.CardScrollView;
 
 import java.util.ArrayList;
 

@@ -91,7 +91,7 @@ public class DrawingLogic {
      * Start Game Thread
      * Start Drawing the playing field
      */
-    public void startGameThread() {
+    private void startGameThread() {
         Log.v(TAG, "Start Game Thread");
 
         mKeepUpdatingGame = true;
@@ -102,7 +102,7 @@ public class DrawingLogic {
      * Resume Game Thread
      * Start Drawing Playing field and move the rectangle again
      */
-    public void resumeGameThread() {
+    private void resumeGameThread() {
         Log.v(TAG, "Resume Game Thread");
         mKeepUpdatingGame = true;
         mGameThread = new DrawGameThread();
@@ -112,7 +112,7 @@ public class DrawingLogic {
      * Stop Game Thread
      * Stop drawing the playing field
      */
-    public void stopGameThread() {
+    private void stopGameThread() {
         Log.v(TAG, "Pause Game Thread");
 
         mKeepUpdatingGame = false;
@@ -126,7 +126,7 @@ public class DrawingLogic {
      * @param x X Coord of Cell
      * @param y Y Coord of Cell
      */
-    public void fillCell(int id, int x, int y) {
+    private void fillCell(int id, int x, int y) {
         Log.v(TAG, "Fill Cell");
         if(id == GameSurface.PLAYER_ID) {
             stopGameThread();
@@ -149,7 +149,7 @@ public class DrawingLogic {
      * AI Move
      * Start the AI Thread
      */
-    public void aiMove() {
+    private void aiMove() {
         mAIThread = new AIThread();
         mAIThread.start();
     }
@@ -299,7 +299,9 @@ public class DrawingLogic {
                                 Paint p = new Paint();
                                 p.setTextSize(100f);
                                 p.setColor(Color.BLUE);
-                                mCanvas.drawText("You Win!", 50, FIELD_HEIGHT / 2, p);
+                                p.setTextAlign(Paint.Align.CENTER);
+                                mCanvas.drawText("You Win!", FIELD_WIDTH/2,
+                                        (FIELD_HEIGHT / 2) - ((p.descent() + p.ascent()) / 2), p);
                                 stopGameThread();
                                 stopAIThread();
                                 stopFillCellThread();
@@ -321,7 +323,9 @@ public class DrawingLogic {
                                 Paint p = new Paint();
                                 p.setTextSize(100f);
                                 p.setColor(Color.BLUE);
-                                mCanvas.drawText("Glass Wins!", 50, FIELD_HEIGHT / 2, p);
+                                p.setTextAlign(Paint.Align.CENTER);
+                                mCanvas.drawText("Glass Wins!", FIELD_WIDTH/2,
+                                        (FIELD_HEIGHT / 2) - ((p.descent() + p.ascent()) / 2), p);
                                 stopGameThread();
                                 stopAIThread();
                                 stopFillCellThread();
@@ -433,7 +437,7 @@ public class DrawingLogic {
      * @param x X Coord
      * @param y Y Coord
      */
-    public void deleteFromOpenCells(int x, int y) {
+    private void deleteFromOpenCells(int x, int y) {
         Log.v(TAG, "Delete From Open Cells");
         for(int i=0; i<mOpenCells.size(); i++) {
             int xCurr = mOpenCells.get(i).getXVal();
@@ -445,7 +449,7 @@ public class DrawingLogic {
     /**
      * Print Open Cells (for Debugging)
      */
-    public void printOpenCells() {
+    private void printOpenCells() {
         for(Pair p : mOpenCells) {
             Log.v(TAG, ""+p.getXVal()+","+p.getYVal()+"/");
         }
@@ -572,7 +576,7 @@ public class DrawingLogic {
      * Get the x-value for the currently highlighted cell
      * @return X Coord
      */
-    public int getCurrX() {
+    private int getCurrX() {
         Log.v(TAG, "Get X");
         return currX;
     }
@@ -581,7 +585,7 @@ public class DrawingLogic {
      * Get the y-value for the currently highlighted cell
      * @return Y Coord
      */
-    public  int getCurrY() {
+    private  int getCurrY() {
         Log.v(TAG, "Get Y");
         return currY;
     }
