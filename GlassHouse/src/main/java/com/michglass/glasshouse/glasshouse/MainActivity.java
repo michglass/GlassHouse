@@ -4,6 +4,8 @@ package com.michglass.glasshouse.glasshouse;
  * Created by Vijay Ganesh
  * Date: 2/26/14
  */
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
@@ -27,12 +29,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 
+import com.google.android.glass.app.Card;
 import com.google.android.glass.media.CameraManager;
-import com.google.android.glass.widget.CardScrollView;
 
 import java.io.File;
 import java.util.Map;
-import java.util.TreeMap;
 
 public class MainActivity extends Activity {
 
@@ -65,7 +66,9 @@ public class MainActivity extends Activity {
     private GraceCardScrollerAdapter mCommMessagesAdapter;
     private GraceCardScrollerAdapter mGameCardsAdapter;
     private GraceCardScrollerAdapter mCurrentAdapter;
+    private GraceCardScrollerAdapter mWelcomeAdapter;
 
+    private int mMediumAnimationDuration;
     /**for bluetooth messaging*/
     private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
 
@@ -130,7 +133,7 @@ public class MainActivity extends Activity {
             else if(graceCard.getGraceCardType() == GraceCardType.EXIT){
                 finish();
             }
-            switchHierarchy(graceCard.getNextAdapter());
+            crossfade(graceCard.getNextAdapter());
         }
     };
 
@@ -144,6 +147,10 @@ public class MainActivity extends Activity {
 
         // initialize all hierarchy adapters and add cards to them
         buildScrollers();
+
+        // Retrieve and cache the system's default "short" animation time.
+        mMediumAnimationDuration = getResources().getInteger(
+                android.R.integer.config_mediumAnimTime);
 
 
 
@@ -232,7 +239,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Resume");
         if(!lastSelectedCard.equals(null) &&
            lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE)){
-            switchHierarchy(lastSelectedCard.getNextAdapter());
+           crossfade(lastSelectedCard.getNextAdapter());
         }
     }
 
@@ -265,6 +272,7 @@ public class MainActivity extends Activity {
 
     // create cards for each hierarchy, add to that's hierarchies adapter
             private void buildScrollers() {
+                GraceCard temp;
                 Log.v(TAG, "private void buildScrollers() called");
                 mBaseCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
                 mMediaCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
@@ -274,7 +282,9 @@ public class MainActivity extends Activity {
                 mGameCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
 
                 // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
-                mBaseCardsAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM));
+                temp = new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM);
+                temp.addImage(R.drawable.puppy).setImageLayout(Card.ImageLayout.FULL);
+                mBaseCardsAdapter.pushCardBack(temp);
                 mBaseCardsAdapter.pushCardBack(new GraceCard(this, mGameCardsAdapter, "Play a Game", GraceCardType.GAMES));
                 mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Exit Application", GraceCardType.EXIT));
                 mBaseCardsAdapter.getSlider().setNumCards(mBaseCardsAdapter.getCount());
@@ -324,6 +334,58 @@ public class MainActivity extends Activity {
 
                 Log.v(TAG, "Exiting buildScrollers()");
             }
+
+    private void crossfade(GraceCardScrollerAdapter nextAdapter) {
+
+        // Set the content view to 0% opacity but visible, so that it is visible
+        // (but fully transparent) during the animation.
+        mCardScrollView.setAlpha(0f);
+        mCardScrollView.setVisibility(View.VISIBLE);
+
+        // Animate the content view to 100% opacity, and clear any animation
+        // listener set on the view.
+
+        // Animate the loading view to 0% opacity. After the animation ends,
+        // set its visibility to GONE as an optimization step (it won't
+        // participate in layout passes, etc.)
+        mCardScrollView.animate()
+                .alpha(0f)
+                .setDuration(mMediumAnimationDuration)
+                .setListener(animationListener);
+
+        switchHierarchy(nextAdapter);
+
+        // Animate the content view to 100% opacity, and clear any animation
+        // listener set on the view.
+        mCardScrollView.animate()
+                .alpha(1f)
+                .setDuration(mMediumAnimationDuration)
+                .setListener(null);
+
+    }
+
+    AnimatorListenerAdapter animationListener = new AnimatorListenerAdapter() {
+        @Override
+        public void onAnimationCancel(Animator animation) {
+            super.onAnimationCancel(animation);
+        }
+
+        @Override
+        public void onAnimationEnd(Animator animation) {
+            super.onAnimationEnd(animation);
+            mCardScrollView.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onAnimationRepeat(Animator animation) {
+            super.onAnimationRepeat(animation);
+        }
+
+        @Override
+        public void onAnimationStart(Animator animation) {
+            super.onAnimationStart(animation);
+        }
+    };
 
 
     /**
