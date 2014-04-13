@@ -1,10 +1,16 @@
 package com.michglass.glasshouse.glasshouse;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -36,9 +42,9 @@ public class TicTacToeActivity extends Activity {
     private final String GO_BACK = "Back";
 
     // BT Variables
-   /* private Messenger mBluetoothServiceMessenger;
+    private Messenger mBluetoothServiceMessenger;
     private boolean mBound;
-    private final Messenger clientMessenger = new Messenger(new ServiceHandler());*/
+    private final Messenger clientMessenger = new Messenger(new ServiceHandler());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,11 +88,11 @@ public class TicTacToeActivity extends Activity {
         super.onStart();
 
         // Bind this Activity to the BT Service
-       /* if(!mBound) {
+        if(!mBound) {
 
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
-        }*/
+        }
     }
     @Override
     protected void onResume() {
@@ -99,12 +105,12 @@ public class TicTacToeActivity extends Activity {
         super.onStop();
 
         // Unbind from BT Service
-       /* if(mBound) {
+        if(mBound) {
 
             sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
             unbindService(mConnection);
             mBound = false;
-        }*/
+        }
     }
     @Override
     protected void onDestroy() {
@@ -231,7 +237,7 @@ public class TicTacToeActivity extends Activity {
      * ServiceConnection
      * Callback Methods that get called when Client binds to Service
      */
- /*   private ServiceConnection mConnection = new ServiceConnection() {
+    private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             Log.v(TAG, "On Service Connect");
@@ -242,16 +248,16 @@ public class TicTacToeActivity extends Activity {
 
             // Send a first message to the service
             setUpMessage();
-        } */
+        }
         /**
          * Only called when Service unexpectedly disconnected!!
          */
-   /*     @Override
+        @Override
         public void onServiceDisconnected(ComponentName componentName) {
             Log.v(TAG, "On Service Disconnect");
             mBound = false;
         }
-    }; */
+    };
 
     /**
      * Send Message To Service
@@ -259,7 +265,7 @@ public class TicTacToeActivity extends Activity {
      * @param messageType Type of message (int, String, Bitmap)
      * @param message Message body
      */
-  /*  public void sendMessageToService(int messageType, Object message) {
+     public void sendMessageToService(int messageType, Object message) {
         Message msg = new Message();
         switch (messageType) {
             case BluetoothService.INT_MESSAGE:
@@ -282,14 +288,14 @@ public class TicTacToeActivity extends Activity {
         } catch (RemoteException remE) {
             Log.e(TAG, "Couldn't contact Service", remE);
         }
-    } */
+    }
     /**
      * Set Up Message
      * First contact with Service
      * Has to be send!
      * (with clientMessenger in replyTo Param so Service can respond to client)
      */
-  /*  public void setUpMessage() {
+     public void setUpMessage() {
         Message startMsg = new Message();
         startMsg.what = BluetoothService.REGISTER_CLIENT;
         startMsg.replyTo = clientMessenger;
@@ -300,14 +306,14 @@ public class TicTacToeActivity extends Activity {
         } catch (RemoteException remE) {
             Log.e(TAG, "Couldn't contact Service", remE);
         }
-    } */
+    }
 
     /**
      * Message Handler
      * Handles incoming messages from Service
      * Messages wrt Android Input or Connection State
      */
-   /* public class ServiceHandler extends Handler {
+     public class ServiceHandler extends Handler {
 
         // when message gets send this method
         // gives info to activity
@@ -351,5 +357,5 @@ public class TicTacToeActivity extends Activity {
                     break;
             }
         }
-    } */
+    }
 }

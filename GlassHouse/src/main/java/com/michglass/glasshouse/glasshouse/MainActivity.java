@@ -248,6 +248,14 @@ public class MainActivity extends Activity {
     public void onStop() {
         Log.v(TAG, "On Stop");
 
+        // Unbind from BT Service
+        if(mBound) {
+            //TODO For tic tac
+            sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
+            unbindService(mConnection);
+            mBound = false;
+        }
+
         // Stop Injecting
         mCurrentAdapter.getSlider().getGestures().stopInjecting();
         mCurrentAdapter.getSlider().stopSlider();
@@ -259,13 +267,6 @@ public class MainActivity extends Activity {
         super.onDestroy();
         Log.v(TAG, "On Destroy");
 
-        // Unbind from BT Service
-        if(mBound) {
-            //TODO For tic tac
-            sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
-            unbindService(mConnection);
-            mBound = false;
-        }
         // Stop the BT Service only in the component that calls startservice() !!
         stopService(new Intent(this, BluetoothService.class));
     }
