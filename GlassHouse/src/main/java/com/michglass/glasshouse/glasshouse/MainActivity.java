@@ -282,8 +282,8 @@ public class MainActivity extends Activity {
                 mGameCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
 
                 // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
-                temp = new GraceCard(this, mCommContactsAdapter, "Send a Message", GraceCardType.COMM);
-                temp.addImage(R.drawable.puppy).setImageLayout(Card.ImageLayout.FULL);
+                temp = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.COMM);
+                temp.addImage(R.drawable.send_a_message).setImageLayout(Card.ImageLayout.FULL);
                 mBaseCardsAdapter.pushCardBack(temp);
                 mBaseCardsAdapter.pushCardBack(new GraceCard(this, mGameCardsAdapter, "Play a Game", GraceCardType.GAMES));
                 mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Exit Application", GraceCardType.EXIT));
