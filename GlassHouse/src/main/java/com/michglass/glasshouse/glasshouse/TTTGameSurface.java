@@ -16,14 +16,12 @@ import java.util.List;
  * Created by Oliver
  * Date 3/21/14.
  */
-public class GameSurface extends SurfaceView {
+public class TTTGameSurface extends SurfaceView {
 
     // Debug
     private static final String TAG = "Game Surface";
 
     // Game Surface Variables
-    private SurfaceHolder mSurfaceHolder; // Holds and manages/modifies game surface
-    private Canvas mCanvas; // Background for Game Grid
     private Rect mRectangle; // Rectangle that indicates which cell is currently in focus
 
     // Paint Objects
@@ -43,7 +41,7 @@ public class GameSurface extends SurfaceView {
      * Constructor
      *
      */
-    public GameSurface(Context context) {
+    public TTTGameSurface(Context context) {
         super(context);
         Log.v(TAG, "Constructor");
 

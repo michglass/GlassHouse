@@ -28,7 +28,7 @@ public class TicTacToeActivity extends Activity {
     // Debug
     private static final String TAG = "TicTacToe";
     private DrawingLogic mDrawingLogic;
-    private GameSurface gameSurface;
+    private TTTGameSurface gameSurface;
 
     // UI Variables
     private GraceCardScrollerAdapter mGraceCardScrollAdapter;
@@ -162,7 +162,7 @@ public class TicTacToeActivity extends Activity {
                     // set up game
                     gameOver = false;
                     gameSurface = null;
-                    gameSurface = new GameSurface(mContext);
+                    gameSurface = new TTTGameSurface(mContext);
                     mDrawingLogic = new DrawingLogic(gameSurface, gameHandler);
                     mDrawingLogic.updateGame();
                     setContentView(gameSurface);
@@ -186,7 +186,7 @@ public class TicTacToeActivity extends Activity {
             if(!gameOver) {
                 Log.v(TAG, "Make Move");
                 if(isInputEnabled) {
-                    mDrawingLogic.makeMove(GameSurface.PLAYER_ID);
+                    mDrawingLogic.makeMove(TTTGameSurface.PLAYER_ID);
                     Log.v(TAG, "Input Enabled");
                 } else {
                     Log.v(TAG, "Input Disabled");
@@ -207,15 +207,15 @@ public class TicTacToeActivity extends Activity {
             @Override
             public boolean handleMessage(Message message) {
 
-                if(message.what == GameSurface.GAME_OVER) {
+                if(message.what == TTTGameSurface.GAME_OVER) {
                     gameOver = true;
                     Log.v(TAG, "Game Over");
                     delay.run();
                     return true;
-                } else if(message.what == GameSurface.DISABLE_INPUT) {
+                } else if(message.what == TTTGameSurface.DISABLE_INPUT) {
                     isInputEnabled = false;
                     return true;
-                } else if(message.what == GameSurface.ENABLE_INPUT) {
+                } else if(message.what == TTTGameSurface.ENABLE_INPUT) {
                     isInputEnabled = true;
                     return true;
                 }

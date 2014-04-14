@@ -23,7 +23,7 @@ public class DrawingLogic {
     // Game View Variables
     private Canvas mCanvas; // Background on which Game field and objects are drawn
     private SurfaceHolder mSurfaceHolder; // manages Canvas
-    private GameSurface mGameSurface;
+    private TTTGameSurface mGameSurface;
 
     // Thread Var
     private DrawGameThread mGameThread;
@@ -69,7 +69,7 @@ public class DrawingLogic {
      * @param gameSurface Game Surface
      * @param gameHandler Handler for contacting Activity when game is over
      */
-    public DrawingLogic(GameSurface gameSurface, Handler gameHandler) {
+    public DrawingLogic(TTTGameSurface gameSurface, Handler gameHandler) {
         Log.v(TAG, "Constructor");
 
         handler = gameHandler;
@@ -97,7 +97,7 @@ public class DrawingLogic {
         mKeepUpdatingGame = true;
         mGameThread = new DrawGameThread();
         mGameThread.start();
-        sendMessageToActivity(GameSurface.ENABLE_INPUT);
+        sendMessageToActivity(TTTGameSurface.ENABLE_INPUT);
     }
     /**
      * Resume Game Thread
@@ -108,7 +108,7 @@ public class DrawingLogic {
         mKeepUpdatingGame = true;
         mGameThread = new DrawGameThread();
         mGameThread.start();
-        sendMessageToActivity(GameSurface.ENABLE_INPUT);
+        sendMessageToActivity(TTTGameSurface.ENABLE_INPUT);
     }
     /**
      * Stop Game Thread
@@ -119,7 +119,7 @@ public class DrawingLogic {
 
         mKeepUpdatingGame = false;
         mGameThread = null;
-        sendMessageToActivity(GameSurface.DISABLE_INPUT);
+        sendMessageToActivity(TTTGameSurface.DISABLE_INPUT);
     }
 
     /**
@@ -131,7 +131,7 @@ public class DrawingLogic {
      */
     private void fillCell(int id, int x, int y) {
         Log.v(TAG, "Fill Cell");
-        if(id == GameSurface.PLAYER_ID) {
+        if(id == TTTGameSurface.PLAYER_ID) {
             stopGameThread();
         }
         mFillCellThread = new FillCellThread(id, x, y);
@@ -180,7 +180,7 @@ public class DrawingLogic {
     // make a move
     public void makeMove(int id) {
         Log.v(TAG, "Make Move");
-        sendMessageToActivity(GameSurface.DISABLE_INPUT);
+        sendMessageToActivity(TTTGameSurface.DISABLE_INPUT);
         fillCell(id,getCurrX(),getCurrY());
 
         aiMove();
@@ -227,7 +227,7 @@ public class DrawingLogic {
                     xCoord += mOpenCells.get(0).getXVal();
                     yCoord += mOpenCells.get(0).getYVal();
                     Log.v(TAG, "X: " + xCoord + ",Y: " + yCoord);
-                    fillCell(GameSurface.AI_ID, xCoord + 106, yCoord + 60);
+                    fillCell(TTTGameSurface.AI_ID, xCoord + 106, yCoord + 60);
                     try {
                         sleep(2000);
                     } catch (InterruptedException intE) {
@@ -290,14 +290,14 @@ public class DrawingLogic {
                     mGameSurface.drawField(mCanvas);
                     Log.v(TAG, "XCent: " + xCent + ", YCent: " + yCent);
                     if (mKeepRunning) {
-                        if (mID == GameSurface.PLAYER_ID) {
+                        if (mID == TTTGameSurface.PLAYER_ID) {
                             playerValues.add(new Pair<Integer, Integer>(xCent, yCent));
                             mGameSurface.drawSymbols(aiValues, playerValues, mCanvas);
-                            addToMatrix(xCent - 107, yCent - 60, GameSurface.PLAYER_ID);
+                            addToMatrix(xCent - 107, yCent - 60, TTTGameSurface.PLAYER_ID);
                             deleteFromOpenCells(xCent - 107, yCent - 60);
                             printOpenCells();
 
-                            if (checkWin(GameSurface.PLAYER_ID)) {
+                            if (checkWin(TTTGameSurface.PLAYER_ID)) {
                                 GAME_OVER = true;
                                 Log.v(TAG, "Player wins");
                                 Paint p = new Paint();
@@ -309,19 +309,19 @@ public class DrawingLogic {
                                 stopGameThread();
                                 stopAIThread();
                                 stopFillCellThread();
-                                sendMessageToActivity(GameSurface.GAME_OVER);
+                                sendMessageToActivity(TTTGameSurface.GAME_OVER);
                             }
                         }
                     }
                     if (mKeepRunning) {
-                        if (mID == GameSurface.AI_ID) {
+                        if (mID == TTTGameSurface.AI_ID) {
                             aiValues.add(new Pair<Integer, Integer>(xCent, yCent));
                             mGameSurface.drawSymbols(aiValues, playerValues, mCanvas);
-                            addToMatrix(xCent - 107, yCent - 60, GameSurface.AI_ID);
+                            addToMatrix(xCent - 107, yCent - 60, TTTGameSurface.AI_ID);
                             deleteFromOpenCells(xCent - 107, yCent - 60);
                             printOpenCells();
 
-                            if (checkWin(GameSurface.AI_ID)) {
+                            if (checkWin(TTTGameSurface.AI_ID)) {
                                 GAME_OVER = true;
                                 Log.v(TAG, "AI Wins");
                                 Paint p = new Paint();
@@ -333,7 +333,7 @@ public class DrawingLogic {
                                 stopGameThread();
                                 stopAIThread();
                                 stopFillCellThread();
-                                sendMessageToActivity(GameSurface.GAME_OVER);
+                                sendMessageToActivity(TTTGameSurface.GAME_OVER);
                             }
                         }
                     }
@@ -384,7 +384,7 @@ public class DrawingLogic {
                         stopAIThread();
                         stopFillCellThread();
                         startGameThread();
-                        sendMessageToActivity(GameSurface.GAME_OVER);
+                        sendMessageToActivity(TTTGameSurface.GAME_OVER);
                     } else {
                         x = mOpenCells.get(count).getXVal();
                         y = mOpenCells.get(count).getYVal();
@@ -492,9 +492,9 @@ public class DrawingLogic {
                 row = 2;
                 break;
         }
-        if(id == GameSurface.PLAYER_ID)
+        if(id == TTTGameSurface.PLAYER_ID)
             mGameMatrix[row][column] = PLAYER;
-        if(id == GameSurface.AI_ID)
+        if(id == TTTGameSurface.AI_ID)
             mGameMatrix[row][column] = AI;
     }
     /**
@@ -518,7 +518,7 @@ public class DrawingLogic {
     }
     private boolean checkRowWin(int id, int row) {
         char c;
-        if (id == GameSurface.PLAYER_ID) c = PLAYER;
+        if (id == TTTGameSurface.PLAYER_ID) c = PLAYER;
         else c = AI;
 
         for (int j = 0; j < 3; j++) {
@@ -529,7 +529,7 @@ public class DrawingLogic {
     }
     private boolean checkColumnWin(int id, int col) {
         char c;
-        if (id == GameSurface.PLAYER_ID) c = PLAYER;
+        if (id == TTTGameSurface.PLAYER_ID) c = PLAYER;
         else c = AI;
 
         for (int i = 0; i < 3; i++) {
@@ -540,7 +540,7 @@ public class DrawingLogic {
     }
     private boolean checkDiagWin(int id, int diag) {
         char c;
-        if (id == GameSurface.PLAYER_ID) c = PLAYER;
+        if (id == TTTGameSurface.PLAYER_ID) c = PLAYER;
         else c = AI;
         int row;
         int column;
