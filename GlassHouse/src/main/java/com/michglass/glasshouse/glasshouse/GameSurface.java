@@ -36,6 +36,8 @@ public class GameSurface extends SurfaceView {
     public static final int PLAYER_ID = 1;
     public static final int AI_ID = 2;
     public static final int GAME_OVER = 3;
+    public static final int DISABLE_INPUT = 4;
+    public static final int ENABLE_INPUT = 5;
 
     /**
      * Constructor

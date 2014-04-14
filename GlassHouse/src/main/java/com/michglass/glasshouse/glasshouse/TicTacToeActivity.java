@@ -46,6 +46,9 @@ public class TicTacToeActivity extends Activity {
     private boolean mBound;
     private final Messenger clientMessenger = new Messenger(new ServiceHandler());
 
+    // boolean that indicates if the user input is allowed
+    boolean isInputEnabled;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(TAG, "On Create");
@@ -76,6 +79,9 @@ public class TicTacToeActivity extends Activity {
         cardScrollView.activate();
         setContentView(cardScrollView);
         mGraceCardScrollAdapter.getSlider().start();
+
+        // disable user input
+        isInputEnabled = false;
 
         // set up handler
         gameHandler = setUpGameHandler();
@@ -179,7 +185,12 @@ public class TicTacToeActivity extends Activity {
             // if the game isn't over then we make a move
             if(!gameOver) {
                 Log.v(TAG, "Make Move");
-                mDrawingLogic.makeMove(GameSurface.PLAYER_ID);
+                if(isInputEnabled) {
+                    mDrawingLogic.makeMove(GameSurface.PLAYER_ID);
+                    Log.v(TAG, "Input Enabled");
+                } else {
+                    Log.v(TAG, "Input Disabled");
+                }
                 return true;
             }
         }
@@ -200,6 +211,13 @@ public class TicTacToeActivity extends Activity {
                     gameOver = true;
                     Log.v(TAG, "Game Over");
                     delay.run();
+                    return true;
+                } else if(message.what == GameSurface.DISABLE_INPUT) {
+                    isInputEnabled = false;
+                    return true;
+                } else if(message.what == GameSurface.ENABLE_INPUT) {
+                    isInputEnabled = true;
+                    return true;
                 }
                 return false;
             }

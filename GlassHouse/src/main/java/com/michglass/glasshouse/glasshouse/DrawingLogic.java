@@ -97,6 +97,7 @@ public class DrawingLogic {
         mKeepUpdatingGame = true;
         mGameThread = new DrawGameThread();
         mGameThread.start();
+        sendMessageToActivity(GameSurface.ENABLE_INPUT);
     }
     /**
      * Resume Game Thread
@@ -107,6 +108,7 @@ public class DrawingLogic {
         mKeepUpdatingGame = true;
         mGameThread = new DrawGameThread();
         mGameThread.start();
+        sendMessageToActivity(GameSurface.ENABLE_INPUT);
     }
     /**
      * Stop Game Thread
@@ -117,6 +119,7 @@ public class DrawingLogic {
 
         mKeepUpdatingGame = false;
         mGameThread = null;
+        sendMessageToActivity(GameSurface.DISABLE_INPUT);
     }
 
     /**
@@ -177,6 +180,7 @@ public class DrawingLogic {
     // make a move
     public void makeMove(int id) {
         Log.v(TAG, "Make Move");
+        sendMessageToActivity(GameSurface.DISABLE_INPUT);
         fillCell(id,getCurrX(),getCurrY());
 
         aiMove();
