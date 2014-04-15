@@ -13,7 +13,7 @@ import android.widget.AdapterView;
  * Created by Oliver
  * Date: 4/14/2014.
  */
-public class SpellingMenuActivity extends Activity {
+public class SpellingMenuActivity extends BluetoothActivity {
 
     // Debug
     private static final String TAG = "Spelling Menu Activity: ";
@@ -24,7 +24,8 @@ public class SpellingMenuActivity extends Activity {
 
     // Text for Cards
     private final String START_GAME = "Start Game";
-    private final String PLAY_AGAIN = "Play again";
+    private final String SAME_WORD = "Try again with same word";
+    private final String DIFFERENT_WORD = "Try again with different word";
     private final String GO_GAME_MENU = "Go to Game Menu";
 
     // context for listener
@@ -81,7 +82,10 @@ public class SpellingMenuActivity extends Activity {
             mGraceCardScrollAdapter.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
             mGraceCardScrollAdapter.popCardFront();
             mGraceCardScrollAdapter.pushCardFront(
-                    new GraceCard(this, mGraceCardScrollAdapter, PLAY_AGAIN, GraceCardType.NONE));
+                    new GraceCard(this, mGraceCardScrollAdapter, SAME_WORD, GraceCardType.NONE));
+            mGraceCardScrollAdapter.pushCardFront(
+                    new GraceCard(this, mGraceCardScrollAdapter, DIFFERENT_WORD, GraceCardType.NONE)
+            );
             mCardScrollView.setAdapter(mGraceCardScrollAdapter);
             mCardScrollView.activate();
             setContentView(mCardScrollView);
@@ -121,7 +125,8 @@ public class SpellingMenuActivity extends Activity {
                 GraceCard card = (GraceCard) mGraceCardScrollAdapter.getItem(i);
 
                 if(card.getText().compareTo(START_GAME) == 0 ||
-                        card.getText().compareTo(PLAY_AGAIN) == 0) {
+                   card.getText().compareTo(DIFFERENT_WORD) == 0 ||
+                   card.getText().compareTo(SAME_WORD) == 0) {
                     mGraceCardScrollAdapter.getSlider().stopSlider();
                     Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);
                     startActivity(gameIntent);

@@ -8,7 +8,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
-public class SpellingGameActivity extends Activity {
+public class SpellingGameActivity extends BluetoothActivity {
 
     // Debug
     private static final String TAG = "Main Activity";
