@@ -22,6 +22,9 @@ public class SpellingGameActivity extends Activity {
     // handler for incoming messages
     private Handler gameHandler;
 
+    // indicates which word to pic
+    public static int GAME_NUMBER = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +48,7 @@ public class SpellingGameActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         mSpellingLogic.stopGame();
+        GAME_NUMBER++;
         Log.v(TAG, "On Destroy");
     }
 
@@ -73,6 +77,7 @@ public class SpellingGameActivity extends Activity {
             public boolean handleMessage(Message message) {
 
                 if(message.what == SpellingGameSurface.GAME_OVER) {
+                    SpellingMenuActivity.FROM_GAME = true;
                     finish();
                 } else if(message.what == SpellingGameSurface.DISABLE_INPUT) {
                     isInputEnabled = false;

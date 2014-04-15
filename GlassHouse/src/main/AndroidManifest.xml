@@ -38,6 +38,9 @@
             android:name="com.michglass.glasshouse.glasshouse.TicTacToeActivity" >
         </activity>
         <activity
+            android:name=".SpellingMenuActivity" >
+        </activity>
+        <activity
             android:name=".SpellingGameActivity" >
         </activity>
 

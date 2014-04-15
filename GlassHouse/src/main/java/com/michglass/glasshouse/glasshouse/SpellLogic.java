@@ -78,7 +78,11 @@ public class SpellLogic {
         mGameWords.add("nice");
         mGameWords.add("a");
 
-        gameWord = mGameWords.get(3);
+        // get the current word
+        if(SpellingGameActivity.GAME_NUMBER == mGameWords.size())
+            SpellingGameActivity.GAME_NUMBER = 0;
+        Log.v(TAG, "Game Number: " + SpellingGameActivity.GAME_NUMBER);
+        gameWord = mGameWords.get(SpellingGameActivity.GAME_NUMBER);
 
         // set up game handler
         mGameHandler = gameHandler;
@@ -174,11 +178,11 @@ public class SpellLogic {
     private void drawGame() {
         if(mCanvas != null) {
             mGameSurface.drawField(mCanvas);
-            mGameSurface.drawShuffledContainer(mCanvas);
+            //mGameSurface.drawShuffledContainer(mCanvas);
             mGameSurface.drawSpelledContainer(mCanvas);
             mGameSurface.drawText(shuffledWord, mCanvas, SHUFFLE);
             mGameSurface.drawText(spelledWord, mCanvas, SPELLED);
-            mGameSurface.drawTextBounds(shuffledWord, mCanvas);
+            //mGameSurface.drawTextBounds(shuffledWord, mCanvas);
         }
     }
     // update coordinates of a letter
