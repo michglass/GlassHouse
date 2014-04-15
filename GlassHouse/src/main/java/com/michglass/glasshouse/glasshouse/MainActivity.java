@@ -326,7 +326,7 @@ public class MainActivity extends Activity {
                     mCommMessagesAdapter.pushCardBack(M);
                     Log.v(TAG, "Message added to Adapter: " + M.Message);
                 }
-                mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Back to Contact List", GraceCardType.BACK));
+                mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Return to Contact List", GraceCardType.BACK));
                 mCommMessagesAdapter.getSlider().setNumCards(mCommMessagesAdapter.getCount());
 
                 mGameCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Tic-Tac-Toe", GraceCardType.TICTACTOE));
