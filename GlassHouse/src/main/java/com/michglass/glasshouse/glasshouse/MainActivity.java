@@ -119,6 +119,7 @@ public class MainActivity extends Activity {
                 bluetoothMessage.setNum(contact.phoneNumber);
             }
             else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
+                //TODO call BluetoothActivity for result to send the message!!!
                 bluetoothMessage.setMessage(graceCard.getText());
                 sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
@@ -221,7 +222,6 @@ public class MainActivity extends Activity {
 
         // Bind this Activity to the BT Service
         if(!mBound) {
-            //TODO for Tic
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
         }
@@ -250,7 +250,6 @@ public class MainActivity extends Activity {
 
         // Unbind from BT Service
         if(mBound) {
-            //TODO For tic tac
             sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
             unbindService(mConnection);
             mBound = false;
@@ -534,7 +533,6 @@ public class MainActivity extends Activity {
      * ServiceConnection
      * Callback Methods that get called when Client binds to Service
      */
-    //TODO Copy and Paste this into TCT activity
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
@@ -563,7 +561,7 @@ public class MainActivity extends Activity {
      * @param messageType Type of message (int, String, Bitmap)
      * @param message Message body
      */
-    public void sendMessageToService(int messageType, Object message) {
+     public void sendMessageToService(int messageType, Object message) {
         Message msg = new Message();
         switch (messageType) {
             case BluetoothService.INT_MESSAGE:
@@ -593,7 +591,7 @@ public class MainActivity extends Activity {
      * Has to be send!
      * (with clientMessenger in replyTo Param so Service can respond to client)
      */
-    public void setUpMessage() {
+     public void setUpMessage() {
         Message startMsg = new Message();
         startMsg.what = BluetoothService.REGISTER_CLIENT;
         startMsg.replyTo = clientMessenger;
@@ -611,7 +609,7 @@ public class MainActivity extends Activity {
      * Handles incoming messages from Service
      * Messages wrt Android Input or Connection State
      */
-    public class ServiceHandler extends Handler {
+     public class ServiceHandler extends Handler {
 
         // when message gets send this method
         // gives info to activity
