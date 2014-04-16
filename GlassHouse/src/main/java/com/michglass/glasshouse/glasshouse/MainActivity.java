@@ -41,7 +41,6 @@ public class MainActivity extends Activity {
     private static final String TAG = "Main Activity";
     public Context context = this;
 
-
     // Messages from BT
     private static final int CAMERA_REQ = 5;
     private static final int VIDEO_REQ = 6;
@@ -66,9 +65,11 @@ public class MainActivity extends Activity {
     private GraceCardScrollerAdapter mCommMessagesAdapter;
     private GraceCardScrollerAdapter mGameCardsAdapter;
     private GraceCardScrollerAdapter mCurrentAdapter;
-    private GraceCardScrollerAdapter mWelcomeAdapter;
+    private GraceCardScrollerAdapter mTutorialAdapter;
+    private GraceCardScrollerAdapter mWelcomeSplashScreenAdapter;
+    private GraceCardScrollerAdapter mCommInterstitialAdapter;
 
-    private int mMediumAnimationDuration;
+    private int mAnimationDuration;
     /**for bluetooth messaging*/
     private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
 
@@ -90,7 +91,7 @@ public class MainActivity extends Activity {
             Log.v(TAG, graceCard.getText());
 
             // null adapter means this card has no tap event so do nothing
-            if (graceCard.getNextAdapter() == null) {
+            if (graceCard.getNextAdapter() == null && graceCard.getGraceCardType() != GraceCardType.EXIT){
                 Log.v(TAG, "Card Scroll Adapter NULL");
                 return;
             }
@@ -150,15 +151,15 @@ public class MainActivity extends Activity {
         buildScrollers();
 
         // Retrieve and cache the system's default "short" animation time.
-        mMediumAnimationDuration = getResources().getInteger(
-                android.R.integer.config_mediumAnimTime);
+      mAnimationDuration = getResources().getInteger(
+                android.R.integer.config_longAnimTime);
 
 
 
-        mCurrentAdapter = mBaseCardsAdapter;
+        mCurrentAdapter = mWelcomeSplashScreenAdapter;
         mCardScrollView = new GraceCardScrollView(this, ScrollerListener);
         mCardScrollView.setAdapter(mCurrentAdapter);
-        mCardScrollView.activate(); // makes it work
+        mCardScrollView.activate(); // makes it wor1k
 
 
         // mContacts = new TreeMap<String, String>();
@@ -172,7 +173,6 @@ public class MainActivity extends Activity {
 
         // start up the base menu cards and its slider
         setContentView(mCardScrollView);
-        mBaseCardsAdapter.getSlider().start();
 
         // grab contacts
         new AsyncTask<Void, Void, Void> () {
@@ -194,9 +194,10 @@ public class MainActivity extends Activity {
 
     // sets current adapter to next menus adapter and sets current view to it and starts its respective slider
     private void switchHierarchy(GraceCardScrollerAdapter nextAdapter) {
-        if(nextAdapter.equals(null)){
+        if(nextAdapter.equals(null)) {
             return;
         }
+
         mCurrentAdapter = nextAdapter;
 
         // replace slider with a new one for our new hierarchy
@@ -272,21 +273,34 @@ public class MainActivity extends Activity {
 
     // create cards for each hierarchy, add to that's hierarchies adapter
             private void buildScrollers() {
-                GraceCard temp;
                 Log.v(TAG, "private void buildScrollers() called");
+                GraceCard placeHolder;
+
                 mBaseCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
                 mMediaCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
                 mPostMediaCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
                 mCommContactsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
                 mCommMessagesAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
                 mGameCardsAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mTutorialAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
+                mWelcomeSplashScreenAdapter = new GraceCardScrollerAdapter(new GraceCardScrollView(this, ScrollerListener), new Slider(new Gestures()));
 
                 // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
-                temp = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.COMM);
-                temp.addImage(R.drawable.send_a_message).setImageLayout(Card.ImageLayout.FULL);
-                mBaseCardsAdapter.pushCardBack(temp);
-                mBaseCardsAdapter.pushCardBack(new GraceCard(this, mGameCardsAdapter, "Play a Game", GraceCardType.GAMES));
-                mBaseCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Exit Application", GraceCardType.EXIT));
+                placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.COMM);
+                placeHolder.addImage(R.drawable.main_message).setImageLayout(Card.ImageLayout.FULL);
+                mBaseCardsAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, mGameCardsAdapter, "", GraceCardType.GAMES);
+                placeHolder.addImage(R.drawable.main_games).setImageLayout(Card.ImageLayout.FULL);
+                mBaseCardsAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, mTutorialAdapter, "", GraceCardType.TUTORIAL);
+                placeHolder.addImage(R.drawable.main_tutorial).setImageLayout(Card.ImageLayout.FULL);
+                mBaseCardsAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, null, "", GraceCardType.EXIT);
+                placeHolder.addImage(R.drawable.main_exit).setImageLayout(Card.ImageLayout.FULL);
+                mBaseCardsAdapter.pushCardBack(placeHolder);
                 mBaseCardsAdapter.getSlider().setNumCards(mBaseCardsAdapter.getCount());
 
                 mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
@@ -301,9 +315,8 @@ public class MainActivity extends Activity {
                 mPostMediaCardsAdapter.getSlider().setNumCards(mPostMediaCardsAdapter.getCount());
                 Log.v(TAG, "Post Media Adapter Built");
 
-                /* **** below needs to be implemented still */
 
-                // communication hierarchy
+                // communication adapter
                 GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
                 Log.v(TAG, "Tim Wood contact added to adapter");
                 GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
@@ -317,6 +330,7 @@ public class MainActivity extends Activity {
                 mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
                 mCommContactsAdapter.getSlider().setNumCards(mCommContactsAdapter.getCount());
 
+                // messages adapter
                 GraceMessageCard.addCard(this, mBaseCardsAdapter, "I love you.", GraceCardType.MESSAGE);
                 GraceMessageCard.addCard(this, mBaseCardsAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
                 GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
@@ -328,15 +342,44 @@ public class MainActivity extends Activity {
                 mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Return to Contact List", GraceCardType.BACK));
                 mCommMessagesAdapter.getSlider().setNumCards(mCommMessagesAdapter.getCount());
 
-                mGameCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Tic-Tac-Toe", GraceCardType.TICTACTOE));
-                mGameCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
+                // game cards adapter
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.TICTACTOE);
+                placeHolder.addImage(R.drawable.games_tictactoe).setImageLayout(Card.ImageLayout.FULL);
+                mGameCardsAdapter.pushCardBack(placeHolder);
 
+                placeHolder = new GraceCard(this, null, "", GraceCardType.SPELLING);
+                placeHolder.addImage(R.drawable.games_spell).setImageLayout(Card.ImageLayout.FULL);
+                mGameCardsAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+                placeHolder.addImage(R.drawable.games_back).setImageLayout(Card.ImageLayout.FULL);
+                mGameCardsAdapter.pushCardBack(placeHolder);
+
+                // Tutorial Adapter
+
+                placeHolder = new GraceCard(this, null, "Menu items automatically change every few seconds.", GraceCardType.NONE);
+                placeHolder.addImage(R.drawable.tutorial_side_1).setImageLayout(Card.ImageLayout.LEFT);
+                mTutorialAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "Press 'OK' on your phone to choose an item.", GraceCardType.BACK);
+                placeHolder.addImage(R.drawable.tutorial_side_2).setImageLayout(Card.ImageLayout.LEFT);
+                placeHolder.setFootnote("Tap 'OK' to go back.");
+                mTutorialAdapter.pushCardBack(placeHolder);
+
+                // welcome Adapter
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "Welcome to Parrot!", GraceCardType.WELCOME);
+                placeHolder.addImage(R.drawable.welcome_side).setImageLayout(Card.ImageLayout.LEFT);
+                placeHolder.setFootnote("Tap 'OK' to begin.");
+                mWelcomeSplashScreenAdapter.pushCardBack(placeHolder);
 
                 Log.v(TAG, "Exiting buildScrollers()");
             }
 
     private void crossfade(GraceCardScrollerAdapter nextAdapter) {
 
+        if(nextAdapter == null){
+            return;
+        }
         // Set the content view to 0% opacity but visible, so that it is visible
         // (but fully transparent) during the animation.
         mCardScrollView.setAlpha(0f);
@@ -350,7 +393,7 @@ public class MainActivity extends Activity {
         // participate in layout passes, etc.)
         mCardScrollView.animate()
                 .alpha(0f)
-                .setDuration(mMediumAnimationDuration)
+                .setDuration(mAnimationDuration)
                 .setListener(animationListener);
 
         switchHierarchy(nextAdapter);
@@ -359,7 +402,7 @@ public class MainActivity extends Activity {
         // listener set on the view.
         mCardScrollView.animate()
                 .alpha(1f)
-                .setDuration(mMediumAnimationDuration)
+                .setDuration(mAnimationDuration)
                 .setListener(null);
 
     }
