@@ -1,18 +1,12 @@
 package com.michglass.glasshouse.glasshouse;
 
-import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -32,6 +26,8 @@ public class TicTacToeActivity extends BluetoothActivity {
 
     // UI Variables
     private GraceCardScrollerAdapter mGraceCardScrollAdapter;
+    private GraceCardScrollView mGraceCardScrollView;
+    private MenuHierarchy menuHierarchy;
 
     // Game Variables
     private boolean gameOver;
@@ -55,25 +51,22 @@ public class TicTacToeActivity extends BluetoothActivity {
         // set the listener for the view
         AdapterView.OnItemClickListener cardScrollViewListener = setCardScrollViewListener();
 
-        // set up Slider
-        Slider slider = new Slider(new Gestures());
-
         // set up cards
         GraceCard startCard = new GraceCard(this, mGraceCardScrollAdapter, START_GAME, GraceCardType.NONE);
         GraceCard goBackCard = new GraceCard(this, mGraceCardScrollAdapter, GO_BACK, GraceCardType.NONE);
 
         // set up view and adapter
-        GraceCardScrollView cardScrollView = new GraceCardScrollView(this, cardScrollViewListener);
-        mGraceCardScrollAdapter = new GraceCardScrollerAdapter(cardScrollView, slider);
+        mGraceCardScrollView = new GraceCardScrollView(this, cardScrollViewListener);
+        mGraceCardScrollAdapter = new GraceCardScrollerAdapter();
         mGraceCardScrollAdapter.pushCardBack(startCard);
         mGraceCardScrollAdapter.pushCardBack(goBackCard);
-        mGraceCardScrollAdapter.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
 
-        // Set content view
-        cardScrollView.setAdapter(mGraceCardScrollAdapter);
-        cardScrollView.activate();
-        setContentView(cardScrollView);
-        mGraceCardScrollAdapter.getSlider().start();
+        menuHierarchy = new MenuHierarchy(mGraceCardScrollView, mGraceCardScrollAdapter,getResources().getInteger(
+                android.R.integer.config_longAnimTime));
+
+        mGraceCardScrollView.activate();
+        setContentView(mGraceCardScrollView);
+        menuHierarchy.getSlider().start();
 
         // disable user input
         isInputEnabled = false;
@@ -89,7 +82,7 @@ public class TicTacToeActivity extends BluetoothActivity {
         super.onDestroy();
 
         // Stop Simulating Gestures
-        mGraceCardScrollAdapter.getSlider().stopSlider();
+        menuHierarchy.getSlider().stopSlider();
 
         // Stop the Game
         if(mDrawingLogic != null)
@@ -122,7 +115,7 @@ public class TicTacToeActivity extends BluetoothActivity {
                 }
                 if(c.getText().equals(START_GAME)) {
 
-                    mGraceCardScrollAdapter.getSlider().stopSlider();
+                    menuHierarchy.getSlider().stopSlider();
 
                     // set up game
                     gameOver = false;

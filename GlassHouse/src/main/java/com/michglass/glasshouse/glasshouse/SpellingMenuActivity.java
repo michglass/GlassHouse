@@ -1,10 +1,10 @@
 package com.michglass.glasshouse.glasshouse;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -19,8 +19,9 @@ public class SpellingMenuActivity extends BluetoothActivity {
     private static final String TAG = "Spelling Menu Activity: ";
 
     // UI Variables
-    private GraceCardScrollerAdapter mGraceCardScrollAdapter;
+    private MenuHierarchy menuHierarchy;
     private GraceCardScrollView mCardScrollView;
+    private GraceCardScrollerAdapter mGraceCardScrollAdapter;
 
     // Text for Cards
     private final String START_GAME = "Start Game";
@@ -49,26 +50,25 @@ public class SpellingMenuActivity extends BluetoothActivity {
         // set the listener for the view
         AdapterView.OnItemClickListener cardScrollViewListener = setCardScrollViewListener();
 
-        // set up Slider
-        Slider slider = new Slider(new Gestures());
-
-        // set up cards
         GraceCard startCard = new GraceCard(this, mGraceCardScrollAdapter, START_GAME, GraceCardType.NONE);
         GraceCard goBackCard = new GraceCard(this, mGraceCardScrollAdapter, GO_GAME_MENU, GraceCardType.NONE);
 
+
         // set up view and adapter
         mCardScrollView = new GraceCardScrollView(this, cardScrollViewListener);
-        mGraceCardScrollAdapter = new GraceCardScrollerAdapter(mCardScrollView, slider);
+        mGraceCardScrollAdapter = new GraceCardScrollerAdapter();
+
+        // add cards to adapter
         mGraceCardScrollAdapter.pushCardBack(startCard);
         mGraceCardScrollAdapter.pushCardBack(goBackCard);
-        mGraceCardScrollAdapter.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
 
+        menuHierarchy = new MenuHierarchy(mCardScrollView, mGraceCardScrollAdapter, getResources().getInteger(
+                android.R.integer.config_longAnimTime));
         // Set content view
-        mCardScrollView.setAdapter(mGraceCardScrollAdapter);
+
         mCardScrollView.activate();
         setContentView(mCardScrollView);
-        mGraceCardScrollAdapter.getSlider().start();
-
+        menuHierarchy.getSlider().start();
     }
     @Override
     protected void onStart() {
@@ -77,9 +77,9 @@ public class SpellingMenuActivity extends BluetoothActivity {
 
         if(FROM_GAME) {
             Log.v(TAG, "From Game");
-            mGraceCardScrollAdapter.getSlider().stopSlider();
-            mGraceCardScrollAdapter.setSlider(new Slider(new Gestures()));
-            mGraceCardScrollAdapter.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
+            menuHierarchy.getSlider().stopSlider();
+            menuHierarchy.setSlider(new Slider(new Gestures()));
+            menuHierarchy.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
             mGraceCardScrollAdapter.popCardFront();
             mGraceCardScrollAdapter.pushCardFront(
                     new GraceCard(this, mGraceCardScrollAdapter, SAME_WORD, GraceCardType.NONE));
@@ -89,7 +89,7 @@ public class SpellingMenuActivity extends BluetoothActivity {
             mCardScrollView.setAdapter(mGraceCardScrollAdapter);
             mCardScrollView.activate();
             setContentView(mCardScrollView);
-            mGraceCardScrollAdapter.getSlider().start();
+            menuHierarchy.getSlider().start();
         }
     }
     @Override
@@ -112,7 +112,7 @@ public class SpellingMenuActivity extends BluetoothActivity {
     protected void onDestroy() {
         Log.v(TAG, "On Destroy");
         super.onDestroy();
-        mGraceCardScrollAdapter.getSlider().stopSlider();
+        menuHierarchy.getSlider().stopSlider();
     }
 
     // item click listener for starting game/exiting activity
@@ -127,7 +127,7 @@ public class SpellingMenuActivity extends BluetoothActivity {
                 if(card.getText().compareTo(START_GAME) == 0 ||
                    card.getText().compareTo(DIFFERENT_WORD) == 0 ||
                    card.getText().compareTo(SAME_WORD) == 0) {
-                    mGraceCardScrollAdapter.getSlider().stopSlider();
+                    menuHierarchy.getSlider().stopSlider();
                     Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);
                     startActivity(gameIntent);
                 } else if(card.getText().compareTo(GO_GAME_MENU) == 0) {

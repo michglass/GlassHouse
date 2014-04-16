@@ -20,17 +20,9 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
     // list of Cards
     private ArrayList<GraceCard> mCardList = new ArrayList<GraceCard>();
 
-
-    // associated cardview and slider
-    private GraceCardScrollView view;
-
-    private Slider slider;
-
     // Constructor
-    public GraceCardScrollerAdapter(GraceCardScrollView _view, Slider _slider) {
+    public GraceCardScrollerAdapter() {
         super();
-        this.setView(_view);
-        this.setSlider(_slider);
     }
 
     public void popCardFront() { mCardList.remove(0); }
@@ -45,23 +37,6 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
         this.mCardList = cards;
     }
     public ArrayList<GraceCard> getCardList() { return this.mCardList; }
-
-    public GraceCardScrollView getView() {
-        return view;
-    }
-
-    public void setView(GraceCardScrollView view) {
-        view.setAdapter(this);
-        this.view = view;
-    }
-
-    public Slider getSlider() {
-        return slider;
-    }
-
-    public void setSlider(Slider slider) {
-        this.slider = slider;
-    }
 
     /*
         Adapter Methods
