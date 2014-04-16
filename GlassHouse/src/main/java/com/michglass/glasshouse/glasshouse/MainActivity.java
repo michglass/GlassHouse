@@ -54,6 +54,16 @@ public class MainActivity extends Activity {
     private GraceCardScrollView mCardScrollView;
     private GraceCard lastSelectedCard = new GraceCard(this, null, "blah", GraceCardType.NONE);
     private MenuHierarchy menuHierarchy;
+    GraceCardScrollerAdapter mBaseCardsAdapter;
+    GraceCardScrollerAdapter mMediaCardsAdapter;
+    GraceCardScrollerAdapter mPostMediaCardsAdapter;
+    GraceCardScrollerAdapter mCommContactsAdapter;
+    GraceCardScrollerAdapter mCommMessagesAdapter;
+    GraceCardScrollerAdapter mGameCardsAdapter;
+    GraceCardScrollerAdapter mTutorialAdapter;
+    GraceCardScrollerAdapter mCommContactInterstitialAdapter;
+    GraceCardScrollerAdapter mWelcomeSplashScreenAdapter;
+    GraceCardScrollerAdapter mCommMessagesInterstitialAdapter;
 
     /**for bluetooth messaging*/
     private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
@@ -87,11 +97,23 @@ public class MainActivity extends Activity {
                 takePicture();
                 return;
 
+            } else if (graceCard.getGraceCardType() == GraceCardType.WELCOME){
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+
             } else if (graceCard.getGraceCardType() == GraceCardType.COMM){
+
+                // crossfade to interstitial contact adapter
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+
+                menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
+
+            } else if (graceCard.getGraceCardType() == GraceCardType.GAMES){
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
 
             } else if (graceCard.getGraceCardType() == GraceCardType.VIDEO) {
                 recordVideo();
                 return;
+
             } else if (graceCard.getGraceCardType() == GraceCardType.REDO) {
                 // remove screenshot from post media menu cards
             } else if (graceCard.getGraceCardType() == GraceCardType.SAVE) {
@@ -101,12 +123,21 @@ public class MainActivity extends Activity {
             } else if(graceCard.getGraceCardType() == GraceCardType.CONTACT) {
                 GraceContactCard contact = (GraceContactCard) graceCard;
                 bluetoothMessage.setNum(contact.phoneNumber);
+
+
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+                menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
+
             }
             else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
                 //TODO call BluetoothActivity for result to send the message!!!
                 bluetoothMessage.setMessage(graceCard.getText());
                 sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+            }
+            else if (graceCard.getGraceCardType() == GraceCardType.TUTORIAL){
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
             }
             else if(graceCard.getGraceCardType() == GraceCardType.TICTACTOE){
                 // Launch Tic-Tac-Toe Activity
@@ -114,11 +145,12 @@ public class MainActivity extends Activity {
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 context.startActivity(intent);
                 return;
+            } else if (graceCard.getGraceCardType() == GraceCardType.BACK){
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
             }
             else if(graceCard.getGraceCardType() == GraceCardType.EXIT){
                 finish();
             }
-            menuHierarchy.crossfade(0, graceCard.getNextAdapter());
         }
     };
 
@@ -181,7 +213,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Resume");
         if(!lastSelectedCard.equals(null) &&
            lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE)){
-           menuHierarchy.crossfade(0, lastSelectedCard.getNextAdapter());
+           menuHierarchy.crossfade(lastSelectedCard.getNextAdapter());
         }
     }
 
@@ -218,21 +250,23 @@ public class MainActivity extends Activity {
                 GraceCard placeHolder;
 
 
-                GraceCardScrollerAdapter mBaseCardsAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mMediaCardsAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mCommContactsAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mCommMessagesAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mGameCardsAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mTutorialAdapter = new GraceCardScrollerAdapter();
-                GraceCardScrollerAdapter mWelcomeSplashScreenAdapter = new GraceCardScrollerAdapter();
+                mBaseCardsAdapter = new GraceCardScrollerAdapter();
+                mMediaCardsAdapter = new GraceCardScrollerAdapter();
+                mPostMediaCardsAdapter = new GraceCardScrollerAdapter();
+                mCommContactsAdapter = new GraceCardScrollerAdapter();
+                mCommMessagesAdapter = new GraceCardScrollerAdapter();
+                mGameCardsAdapter = new GraceCardScrollerAdapter();
+                mTutorialAdapter = new GraceCardScrollerAdapter();
+                mCommContactInterstitialAdapter = new GraceCardScrollerAdapter();
+                mWelcomeSplashScreenAdapter = new GraceCardScrollerAdapter();
+                mCommMessagesInterstitialAdapter = new GraceCardScrollerAdapter();
 
                 mCardScrollView = new GraceCardScrollView(this, ScrollerListener);
                 menuHierarchy = new MenuHierarchy(mCardScrollView, mWelcomeSplashScreenAdapter, getResources().getInteger(
                         android.R.integer.config_longAnimTime));
 
                 // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
-                placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.COMM);
+                placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "", GraceCardType.COMM);
                 placeHolder.addImage(R.drawable.main_message).setImageLayout(Card.ImageLayout.FULL);
                 mBaseCardsAdapter.pushCardBack(placeHolder);
 
@@ -259,12 +293,20 @@ public class MainActivity extends Activity {
                 Log.v(TAG, "Post Media Adapter Built");
 
 
-                // communication adapter
-                GraceContactCard.addCard(this, mCommMessagesAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
+                // communication adapters
+                placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.NONE);
+                placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+                mCommContactInterstitialAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, mCommMessagesAdapter, "", GraceCardType.NONE);
+                placeHolder.addImage(R.drawable.messages_message_interstitial).setImageLayout(Card.ImageLayout.FULL);
+                mCommMessagesInterstitialAdapter.pushCardBack(placeHolder);
+
+                GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
                 Log.v(TAG, "Tim Wood contact added to adapter");
-                GraceContactCard.addCard(this, mCommMessagesAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
-                GraceContactCard.addCard(this, mCommMessagesAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
-                GraceContactCard.addCard(this, mCommMessagesAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
+                GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
+                GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
+                GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
                 Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
                 for(GraceContactCard C: GraceContactCard.contactList){
                     mCommContactsAdapter.pushCardBack(C);
@@ -319,6 +361,8 @@ public class MainActivity extends Activity {
                 menuHierarchy.addAdapter(mCommMessagesAdapter);
                 menuHierarchy.addAdapter(mCommContactsAdapter);
                 menuHierarchy.addAdapter(mGameCardsAdapter);
+                menuHierarchy.addAdapter(mCommContactInterstitialAdapter);
+                menuHierarchy.addAdapter(mCommMessagesInterstitialAdapter);
 
                 Log.v(TAG, "Exiting buildMenuHierarchy()");
             }

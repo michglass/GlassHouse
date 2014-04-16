@@ -2,6 +2,7 @@ package com.michglass.glasshouse.glasshouse;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 
@@ -48,38 +49,17 @@ public class MenuHierarchy {
         // run on a delay
         this.getSlider().stopSlider();
 
-
-        class DelayCrossFade extends Thread {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                super.run();
-                if(next_adapter == null) {
-                    return;
-                }
-                long sleep_miliseconds = delay_seconds * 1000;
-                try {
-                    Log.v("crossfade delay", "Sleep");
-                    sleep(delay_seconds * 1000);
-                } catch (InterruptedException intE) {
-                    Log.e("crossfade delay", "Slider Interrupted", intE);
-                    return;
-                }
-
                 crossfade(next_adapter);
             }
-        }
-        if(delay_seconds == 0) {
-            crossfade(next_adapter);
-            return;
-        }
-        else {
-            DelayCrossFade runnable = new DelayCrossFade();
-            runnable.run();
-            return;
-        }
+        }, delay_seconds * 1000);
     }
 
-    private void crossfade(GraceCardScrollerAdapter next_adapter){
+    public void crossfade(GraceCardScrollerAdapter next_adapter){
+        this.getSlider().stopSlider();
 
         if(next_adapter == null){
             return;
@@ -104,11 +84,12 @@ public class MenuHierarchy {
 
     private void swapAdapters(GraceCardScrollerAdapter next_adapter){
         if(next_adapter.equals(null)) {
+            Log.v("swap", "swap adapters: next adapter equals null");
             return;
         }
 
         mCurrentAdapter = next_adapter;
-
+        Log.v("swap", "swapping adapters to: " + ((GraceCard) next_adapter.getItem(0)).getText());
         // replace slider with a new one for our new hierarchy
         //mCurrGestures = new Gestures();
         //mCurrentSlider = new Slider(mCurrentAdapter.getCount());
@@ -116,14 +97,16 @@ public class MenuHierarchy {
         // switch out cards being displayed
         mCardScrollView.setAdapter(mCurrentAdapter);
 
+
         mCardScrollView.setSelection(0);
         mCurrentAdapter.notifyDataSetChanged();
         mCardScrollView.updateViews(false);
         mCardScrollView.activate();
         this.setSlider(new Slider(new Gestures()));
         this.getSlider().setNumCards(mCurrentAdapter.getCount());
-        this.getSlider().start();
-
+        if(mCurrentAdapter.getCount() > 1){
+            this.getSlider().start();
+        }
     }
 
     public void addAdapter(GraceCardScrollerAdapter adapter){
