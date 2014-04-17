@@ -47,12 +47,13 @@ public class MainActivity extends Activity {
     private Messenger mBluetoothServiceMessenger;
     private boolean mBound;
     private final Messenger clientMessenger = new Messenger(new ServiceHandler());
+    private int mBluetoothState = BluetoothService.STATE_NONE;
 
 
     // UI Variables
     private Map<String, String> mContacts;
     private GraceCardScrollView mCardScrollView;
-    private GraceCard lastSelectedCard = new GraceCard(this, null, "blah", GraceCardType.NONE);
+    private GraceCard lastSelectedCard;
     private MenuHierarchy menuHierarchy;
     GraceCardScrollerAdapter mBaseCardsAdapter;
     GraceCardScrollerAdapter mMediaCardsAdapter;
@@ -64,6 +65,8 @@ public class MainActivity extends Activity {
     GraceCardScrollerAdapter mCommContactInterstitialAdapter;
     GraceCardScrollerAdapter mWelcomeSplashScreenAdapter;
     GraceCardScrollerAdapter mCommMessagesInterstitialAdapter;
+    GraceCardScrollerAdapter mMessageSentAdapter;
+    GraceCardScrollerAdapter mMessageNotSentAdapter;
 
     /**for bluetooth messaging*/
     private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
@@ -83,7 +86,7 @@ public class MainActivity extends Activity {
 
             GraceCard graceCard = (GraceCard) menuHierarchy.getCurrentAdapter().getItem(position);
             lastSelectedCard = graceCard;
-            Log.v(TAG, graceCard.getText());
+            Log.v(TAG, (String) graceCard.getText());
 
             // null adapter means this card has no tap event so do nothing
             if (graceCard.getNextAdapter() == null && graceCard.getGraceCardType() != GraceCardType.EXIT){
@@ -92,7 +95,7 @@ public class MainActivity extends Activity {
             }
 
             // long ass switch for cards that have functions
-            final String cardText = graceCard.getText();
+            final String cardText = (String) graceCard.getText();
             if (graceCard.getGraceCardType() == GraceCardType.CAMERA) {
                 takePicture();
                 return;
@@ -124,17 +127,23 @@ public class MainActivity extends Activity {
                 GraceContactCard contact = (GraceContactCard) graceCard;
                 bluetoothMessage.setNum(contact.phoneNumber);
 
-
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
                 menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
 
             }
             else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
                 //TODO call BluetoothActivity for result to send the message!!!
-                bluetoothMessage.setMessage(graceCard.getText());
+                bluetoothMessage.setMessage((String) graceCard.getText());
                 sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
-                menuHierarchy.crossfade(graceCard.getNextAdapter());
+
+                if(mBound){
+                    menuHierarchy.crossfade(mMessageSentAdapter);
+                }
+                else{
+                    menuHierarchy.crossfade(mMessageNotSentAdapter);
+                }
+                menuHierarchy.crossfade(2, mBaseCardsAdapter);
             }
             else if (graceCard.getGraceCardType() == GraceCardType.TUTORIAL){
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
@@ -142,6 +151,11 @@ public class MainActivity extends Activity {
             else if(graceCard.getGraceCardType() == GraceCardType.TICTACTOE){
                 // Launch Tic-Tac-Toe Activity
                 Intent intent = new Intent(context, TicTacToeActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                context.startActivity(intent);
+                return;
+            } else if (graceCard.getGraceCardType() == GraceCardType.SPELLING){
+                Intent intent = new Intent(context, SpellingGameActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 context.startActivity(intent);
                 return;
@@ -164,13 +178,11 @@ public class MainActivity extends Activity {
 
         // initialize all hierarchy adapters and add cards to them
         buildMenuHierarchy();
+        lastSelectedCard = null;
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        // activate and go!
-        mCardScrollView.activate();
-        setContentView(mCardScrollView);
 
         // grab contacts
         new AsyncTask<Void, Void, Void> () {
@@ -198,8 +210,13 @@ public class MainActivity extends Activity {
         if(!mBound) {
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
+
+        // activate and go!
+        mCardScrollView.activate();
+        setContentView(mCardScrollView);
         }
     }
+
 
     @Override
     public void onPause() {
@@ -211,8 +228,9 @@ public class MainActivity extends Activity {
     public void onResume() {
         super.onResume();
         Log.v(TAG, "On Resume");
-        if(!lastSelectedCard.equals(null) &&
-           lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE)){
+        if(!(lastSelectedCard == null) &&
+           (lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE) ||
+            lastSelectedCard.getGraceCardType().equals(GraceCardType.SPELLING))){
            menuHierarchy.crossfade(lastSelectedCard.getNextAdapter());
         }
     }
@@ -260,6 +278,8 @@ public class MainActivity extends Activity {
                 mCommContactInterstitialAdapter = new GraceCardScrollerAdapter();
                 mWelcomeSplashScreenAdapter = new GraceCardScrollerAdapter();
                 mCommMessagesInterstitialAdapter = new GraceCardScrollerAdapter();
+                mMessageSentAdapter = new GraceCardScrollerAdapter();
+                mMessageNotSentAdapter = new GraceCardScrollerAdapter();
 
                 mCardScrollView = new GraceCardScrollView(this, ScrollerListener);
                 menuHierarchy = new MenuHierarchy(mCardScrollView, mWelcomeSplashScreenAdapter, getResources().getInteger(
@@ -315,22 +335,30 @@ public class MainActivity extends Activity {
                 mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
 
                 // messages adapter
-                GraceMessageCard.addCard(this, mBaseCardsAdapter, "I love you.", GraceCardType.MESSAGE);
-                GraceMessageCard.addCard(this, mBaseCardsAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
-                GraceMessageCard.addCard(this, mBaseCardsAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
-                GraceMessageCard.addCard(this, mBaseCardsAdapter, "What's for dinner?", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mMessageSentAdapter, "I love you.", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mMessageSentAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mMessageSentAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
+                GraceMessageCard.addCard(this, mMessageSentAdapter, "What's for dinner?", GraceCardType.MESSAGE);
                 for(GraceMessageCard M: GraceMessageCard.messageList){
                     mCommMessagesAdapter.pushCardBack(M);
                     Log.v(TAG, "Message added to Adapter: " + M.Message);
                 }
                 mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Return to Contact List", GraceCardType.BACK));
 
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "Message Sent!", GraceCardType.BACK);
+                mMessageSentAdapter.pushCardBack(placeHolder);
+
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "Message failed to send.", GraceCardType.BACK);
+                mMessageNotSentAdapter.pushCardBack(placeHolder);
+
+
+
                 // game cards adapter
                 placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.TICTACTOE);
                 placeHolder.addImage(R.drawable.games_tictactoe).setImageLayout(Card.ImageLayout.FULL);
                 mGameCardsAdapter.pushCardBack(placeHolder);
 
-                placeHolder = new GraceCard(this, null, "", GraceCardType.SPELLING);
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.SPELLING);
                 placeHolder.addImage(R.drawable.games_spell).setImageLayout(Card.ImageLayout.FULL);
                 mGameCardsAdapter.pushCardBack(placeHolder);
 
@@ -479,7 +507,6 @@ public class MainActivity extends Activity {
 
     private void insertScreenshotIntoPostMediaMenu(Uri mediaLocation) {
         GraceCard screenshotCard = new GraceCard(this, null, "", GraceCardType.SCREENSHOT);
-        screenshotCard.addImage(mediaLocation);
         // mPostMediaCardsAdapter.pushCardFront(screenshotCard);
     }
 
@@ -594,6 +621,7 @@ public class MainActivity extends Activity {
 
             switch (msg.what) {
                 case BluetoothService.MESSAGE_STATE_CHANGE:
+                    mBluetoothState = msg.arg1;
                     Log.v(TAG, "connection state changed");
                     switch (msg.arg1) {
                         case BluetoothService.STATE_CONNECTED:

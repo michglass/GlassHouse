@@ -45,7 +45,7 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
      * @param id Card Id
      * @return int position of Id
      */
-    @Override
+
     public int findIdPosition(Object id) {
         Log.v(TAG, "Find id Position");
         return -1;
@@ -55,7 +55,7 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
      * @param item Card we want to find position
      * @return position of Card (item)
      */
-    @Override
+
     public int findItemPosition(Object item) {
         return mCardList.indexOf(item);
     }
@@ -82,6 +82,11 @@ public class GraceCardScrollerAdapter extends CardScrollAdapter {
      */
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        return mCardList.get(position).toView();
+        return mCardList.get(position).getView();
+    }
+
+    @Override
+    public int getPosition(Object o) {
+        return 0;
     }
 }

@@ -287,6 +287,7 @@ public class BluetoothService extends Service {
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
 
+
         // connection successful, set state to connected
         setState(STATE_CONNECTED);
     }
@@ -417,7 +418,7 @@ public class BluetoothService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Query Error", e);
         }
-    }
+   }
 
     /**
      * Connect Thread

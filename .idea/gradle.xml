@@ -7,8 +7,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/GlassHouse" />
+            <option value="D:\Dev\git\GlassHouse" />
+            <option value="D:\Dev\git\GlassHouse\GlassHouse" />
           </set>
         </option>
       </GradleProjectSettings>

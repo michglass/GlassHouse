@@ -100,7 +100,6 @@ public class MenuHierarchy {
 
         mCardScrollView.setSelection(0);
         mCurrentAdapter.notifyDataSetChanged();
-        mCardScrollView.updateViews(false);
         mCardScrollView.activate();
         this.setSlider(new Slider(new Gestures()));
         this.getSlider().setNumCards(mCurrentAdapter.getCount());
