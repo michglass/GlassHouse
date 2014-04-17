@@ -137,7 +137,7 @@ public class MainActivity extends Activity {
                 sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
 
-                if(mBound){
+                if(mBluetoothState == BluetoothService.STATE_CONNECTED){
                     menuHierarchy.crossfade(mMessageSentAdapter);
                 }
                 else{
@@ -214,6 +214,33 @@ public class MainActivity extends Activity {
         // activate and go!
         mCardScrollView.activate();
         setContentView(mCardScrollView);
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+                @Override
+            public void run() {
+                Log.v(TAG, "handler running");
+                if(!menuHierarchy.getCurrentAdapter().equals(mWelcomeSplashScreenAdapter)){
+                    Log.v(TAG, "handler -- not on welcome screen");
+                    return;
+                }
+                if(mBluetoothState != BluetoothService.STATE_CONNECTED){
+                    Log.v(TAG, "bluetooth not connected");
+                    // TODO animate this
+                    ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0))
+                            .setText(R.string.welcome_connecting);
+                    ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0))
+                            .setFootnote(R.string.welcome_connecting_footnote);
+
+                    mWelcomeSplashScreenAdapter.notifyDataSetChanged();
+
+
+                }
+
+            }
+        }, 2000);
+
+
         }
     }
 
@@ -368,7 +395,7 @@ public class MainActivity extends Activity {
 
                 // Tutorial Adapter
 
-                placeHolder = new GraceCard(this, null, "Menu items automatically change every few seconds.", GraceCardType.NONE);
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, "Menu items automatically change every few seconds.", GraceCardType.NONE);
                 placeHolder.addImage(R.drawable.tutorial_side_1).setImageLayout(Card.ImageLayout.LEFT);
                 mTutorialAdapter.pushCardBack(placeHolder);
 
@@ -378,9 +405,8 @@ public class MainActivity extends Activity {
                 mTutorialAdapter.pushCardBack(placeHolder);
 
                 // welcome Adapter
-                placeHolder = new GraceCard(this, mBaseCardsAdapter, "Welcome to Parrot!", GraceCardType.WELCOME);
+                placeHolder = new GraceCard(this, mBaseCardsAdapter, getString(R.string.welcome), GraceCardType.WELCOME);
                 placeHolder.addImage(R.drawable.welcome_side).setImageLayout(Card.ImageLayout.LEFT);
-                placeHolder.setFootnote("Tap 'OK' to begin.");
                 mWelcomeSplashScreenAdapter.pushCardBack(placeHolder);
 
                 // add adapters to menuHierarchy
@@ -391,6 +417,8 @@ public class MainActivity extends Activity {
                 menuHierarchy.addAdapter(mGameCardsAdapter);
                 menuHierarchy.addAdapter(mCommContactInterstitialAdapter);
                 menuHierarchy.addAdapter(mCommMessagesInterstitialAdapter);
+                menuHierarchy.addAdapter(mMessageSentAdapter);
+                menuHierarchy.addAdapter(mMessageNotSentAdapter);
 
                 Log.v(TAG, "Exiting buildMenuHierarchy()");
             }
@@ -626,8 +654,15 @@ public class MainActivity extends Activity {
                     switch (msg.arg1) {
                         case BluetoothService.STATE_CONNECTED:
                             Log.v(TAG, "state connected");
-                            //TODO Start sliding only here! User shouldn't be able to interact with
-                            //TODO UI before
+                            GraceCard placeHolder;
+                            if(menuHierarchy.getCurrentAdapter().equals(mWelcomeSplashScreenAdapter)){
+                                placeHolder = (GraceCard) menuHierarchy.getCurrentAdapter().getItem(0);
+                                if(placeHolder.getText().toString().equals(getString(R.string.welcome_connecting))){
+                                    placeHolder.setText(R.string.welcome_connected);
+                                    placeHolder.setFootnote(R.string.welcome_connected_footnote);
+                                }
+                                mWelcomeSplashScreenAdapter.notifyDataSetChanged();
+                            }
                             break;
                         case BluetoothService.STATE_CONNECTING:
                             Log.v(TAG, "state connecting");
