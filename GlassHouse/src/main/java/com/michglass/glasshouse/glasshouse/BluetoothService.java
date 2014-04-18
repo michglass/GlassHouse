@@ -65,7 +65,11 @@ public class BluetoothService extends Service {
     public static final int THIS_STOPPED = 9; // (== GLASS_STOPPED on Android) indicates if this app has stopped
     // Commands for Glass
     public static final int COMMAND_OK = 10;
-    public static final int COMMAND_BACK = 11;
+    //public static final int COMMAND_BACK = 11;
+
+    // Msg from/To Android
+    public static final int ANDROID_DATA = 11; // indicates that we want to send sth to android
+    public static final int ANDROID_MESSAGE = 14; // indicating that we have received sth from android
 
     // Service variables
     public static final int REGISTER_CLIENT = 12;
@@ -73,11 +77,11 @@ public class BluetoothService extends Service {
     public static int BOUND_COUNT = 0;
     private Messenger mClientMessenger;
     private final Messenger mBluetoothServiceMessenger = new Messenger(new ClientHandler());
-
+/*
     public static final int PICTURE_MESSAGE = 14;
     public static final int TEXT_MESSAGE = 15;
     public static final int INT_MESSAGE = 16;
-
+*/
     /**
      * Service Methods: Handle Service Lifecycle
      * Handling messages from Client: Client meaning for example the Main Activity
@@ -150,7 +154,8 @@ public class BluetoothService extends Service {
     public void onDestroy() {
         Log.v(TAG, "Destroy Service");
 
-        sendToAndroid(THIS_STOPPED);
+        byte[] stopmsg = ByteBuffer.allocate(4).putInt(THIS_STOPPED).array();
+        sendToAndroid(stopmsg);
         // Disconnect from Bluetooth and stop threads
         disconnect();
 
@@ -168,7 +173,8 @@ public class BluetoothService extends Service {
         public void handleMessage(Message msg) {
 
             switch (msg.what) {
-
+                //TODO delete if new v works
+/*
                 case PICTURE_MESSAGE:
                     Log.v(TAG, "Picture for Android");
                     Bitmap bitMap = (Bitmap) msg.obj;
@@ -179,6 +185,16 @@ public class BluetoothService extends Service {
                     sendStringToAndroid(text);
                     Log.v(TAG, "Text msg for Android");
                     break;
+                    */
+                case ANDROID_DATA:
+                    byte[] androidmsg;
+                    if(msg.obj != null) {
+                        androidmsg = (byte[]) msg.obj;
+                        sendToAndroid(androidmsg);
+                    } else {
+                        Log.e(TAG, "MSG for Android is NULL");
+                    }
+                    break;
                 case REGISTER_CLIENT:
                     Log.v(TAG, "Register Client");
                     BluetoothService.BOUND_COUNT++;
@@ -186,8 +202,6 @@ public class BluetoothService extends Service {
 
                     // register Client to be able to send Messages back
                     mClientMessenger = msg.replyTo;
-
-                    //sendMessageToClient(TestService.REGISTER_CLIENT);
                     break;
                 case UNREGISTER_CLIENT:
                     Log.v(TAG, "Unregister Client");
@@ -201,15 +215,33 @@ public class BluetoothService extends Service {
             }
         }
     }
-    /**
-     * Send Message To Client
-     * Sends a message to a bound Client
-     * @param clientMsg Message for the Client
-     */
-    private void sendMessageToClient(int clientMsg) {
-        Message msg = new Message();
-        msg.what = clientMsg;
 
+    /**
+     * Send to Android
+     * Send a generic(== bytearray) message to the android phone
+     * Can be a specific message or just connection states
+     * @param androidmsg byte array we send to android
+     */
+    public void sendToAndroid(byte[] androidmsg) {
+
+        if(mCurrState != BluetoothService.STATE_NONE) {
+            if (mConnectedThread != null)
+                mConnectedThread.write(androidmsg);
+            else {
+                Log.v(TAG, "Connection not yet established");
+            }
+        }
+    }
+    /**
+     * Send Message To Client (1)
+     * Sends a message to Client that hasn't been received from Android
+     * Usually connection update messages or simple command messages
+     * @param message Message for the Client
+     */
+    private void sendMessageToClient(int message) {
+        Message msg = new Message();
+        msg.what = message;
+        Log.v(TAG, "Send msg to Client type 1");
         try {
             if(mClientMessenger == null) {
                 Log.v(TAG, "Client Messenger NULL");
@@ -218,6 +250,26 @@ public class BluetoothService extends Service {
             }
         } catch (RemoteException remE) {
             Log.e(TAG, "Couldn't contact Client");
+        }
+    }
+    /**
+     * Send Message To Client (2)
+     * Sends a message to Client that has been received from Glass
+     * @param glassmsg Message string from glass
+     */
+    private void sendMessageToClient(String glassmsg) {
+        Message msg = new Message();
+        msg.what = ANDROID_MESSAGE;
+        msg.obj = glassmsg;
+        Log.v(TAG, "Send msg to Client type 2");
+        try{
+            if(mClientMessenger == null) {
+                Log.e(TAG, "Client Messenger is null");
+            } else {
+                mClientMessenger.send(msg);
+            }
+        } catch (RemoteException remE) {
+            Log.e(TAG, "Couldn't contact client");
         }
     }
 
@@ -333,30 +385,6 @@ public class BluetoothService extends Service {
         // try listening again
         this.listenToIncomingRequests(mbtAdapter);
     }
-    /**
-     * Write
-     * Sends a message to Android device
-     * @param msg Message for Android device
-     */
-    public void sendToAndroid(int msg) {
-
-        if(mCurrState != BluetoothService.STATE_NONE) {
-            if (mConnectedThread != null)
-                mConnectedThread.write(msg);
-            else {
-                Log.v(TAG, "Connection not yet established");
-            }
-        }
-    }
-    public void sendStringToAndroid(String text) {
-        if(mCurrState != BluetoothService.STATE_NONE) {
-            if(mConnectedThread != null)
-                mConnectedThread.writeString(text);
-            else
-                Log.v(TAG, "Connection not yet established");
-        }
-    }
-
 
     /**
      * Util Methods
@@ -391,7 +419,7 @@ public class BluetoothService extends Service {
             } catch (RemoteException remE) {
                 Log.e(TAG, "Couldn't contact client", remE);
             }
-        }
+        } else { Log.e(TAG, "Client Messenger NULL"); }
     }
     /**
      * Query Devices
@@ -418,7 +446,7 @@ public class BluetoothService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Query Error", e);
         }
-   }
+    }
 
     /**
      * Connect Thread
@@ -639,14 +667,21 @@ public class BluetoothService extends Service {
                 Log.v(TAG, "Loop ConnectedThread");
                 try {
                     bytes = mmInStream.read(inBuffer);
-
+                    Log.v(TAG, "Andr message length: " + bytes);
                     // convert byte array to int
                     ByteBuffer wrapper = ByteBuffer.wrap(inBuffer);
                     int inMessage = wrapper.getInt();
-                    Log.v(TAG, "InputStream: " + inMessage);
-
-                    // Handler sends message to Activity
-                    sendMessageToClient(inMessage);
+                    // check for simple commands
+                    if(inMessage == ANDROID_STOPPED) {
+                        Log.v(TAG, "Android Stop received: " + inMessage);
+                        sendMessageToClient(ANDROID_STOPPED);
+                    }else if(inMessage == COMMAND_OK) {
+                        Log.v(TAG, "Android OK received: " + inMessage);
+                        sendMessageToClient(COMMAND_OK);
+                    } else {
+                        String msg = new String(inBuffer, 0, bytes);
+                        sendMessageToClient(msg);
+                    }
                 } catch (IOException ioE) {
                     Log.e(TAG, "Failed reading inStream", ioE);
                     break;
@@ -659,12 +694,10 @@ public class BluetoothService extends Service {
          * Write a message to Output Stream and send it to Android Device
          * @param msg Message that gets send to Android
          */
-        public void write(int msg) {
+        public void write(byte[] msg) {
             Log.v(TAG, "Write Out");
-            byte[] buffer = ByteBuffer.allocate(4).putInt(msg).array();
-
             try {
-                mmOutStream.write(buffer);
+                mmOutStream.write(msg);
             } catch (IOException e) {
                 Log.e(TAG, "Failed writing to Android", e);
 
@@ -672,16 +705,6 @@ public class BluetoothService extends Service {
                 sendMessageToClient(ANDROID_STOPPED);
                 // initiate to listen to incoming requests again
                 restartListeningToIncomingRequests();
-            }
-        }
-        public void writeString(String msg) {
-            Log.v(TAG, "Write Out");
-            byte[] buffer = msg.getBytes();
-
-            try {
-                mmOutStream.write(buffer);
-            } catch (IOException e) {
-                Log.e(TAG, "Failed writing to Android", e);
             }
         }
         /**

@@ -12,6 +12,8 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+import org.json.JSONObject;
+
 /**
  * Created by Oliver
  * Date: 4/14/2014.
@@ -46,7 +48,7 @@ public class BluetoothActivity extends Activity {
         // Unbind from BT Service
         if(mBound) {
 
-            sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.UNREGISTER_CLIENT);
+            sendMessageToService(BluetoothService.UNREGISTER_CLIENT);
             unbindService(mConnection);
             mBound = false;
         }
@@ -86,34 +88,57 @@ public class BluetoothActivity extends Activity {
         }
     };
 
+
     /**
-     * Send Message To Service
-     * Sends a message over the Service to Android
-     * @param messageType Type of message (int, String, Bitmap)
-     * @param message Message body
+     * Send to Android (1)
+     * Send a byte array to android
+     * @param androidmsg message for android
      */
-    public void sendMessageToService(int messageType, Object message) {
+    private void sendToAndroid(byte[] androidmsg) {
+        sendMessageToService(BluetoothService.ANDROID_DATA, androidmsg);
+    }
+    /**
+     * Send to Android (2)
+     * Send a JSON Object to Android
+     * @param json Json object for android
+     */
+    private void sendToAndroid(JSONObject json) {
+        byte[] bytemsg = json.toString().getBytes();
+        sendToAndroid(bytemsg);
+    }
+    /**
+     * Send Message To Service (1)
+     * Sends a non-Android related message to Android
+
+     * @param message Message for service
+     */
+    public void sendMessageToService(int message) {
         Message msg = new Message();
-        switch (messageType) {
-            case BluetoothService.INT_MESSAGE:
-                int intMsg = (Integer) message;
-                msg.what = intMsg;
-                break;
-            case BluetoothService.TEXT_MESSAGE:
-                msg.what = BluetoothService.TEXT_MESSAGE;
-                msg.obj = message;
-                break;
-            case BluetoothService.PICTURE_MESSAGE:
-                msg.what = BluetoothService.PICTURE_MESSAGE;
-                msg.obj = message;
-                break;
-        }
+        msg.what = message;
 
         try {
-            Log.v(TAG, "Try contacting Service");
+            Log.v(TAG, "Try contacting Service: type 1");
             mBluetoothServiceMessenger.send(msg);
         } catch (RemoteException remE) {
             Log.e(TAG, "Couldn't contact Service", remE);
+        }
+    }
+    /**
+     * Send Message to Service (2)
+     * Send a Android related message to Service
+     * @param w what parameter for msg
+     * @param androidmsg msg for android
+     */
+    public void sendMessageToService(int w, byte[] androidmsg) {
+        Message msg = new Message();
+        msg.what = w;
+        msg.obj = androidmsg;
+
+        try{
+            Log.v(TAG, "Try contacting Service: type 2");
+            mBluetoothServiceMessenger.send(msg);
+        } catch (RemoteException remE) {
+            Log.e(TAG, "Couldn't contact service");
         }
     }
     /**
@@ -175,12 +200,9 @@ public class BluetoothActivity extends Activity {
                     Gestures g = new Gestures();
                     g.createGesture(Gestures.TYPE_TAP);
                     break;
-                case BluetoothService.COMMAND_BACK:
-                    Log.v(TAG, "Command back");
-                    break;
                 case BluetoothService.ANDROID_STOPPED:
                     Log.v(TAG, "Android App closed");
-                    sendMessageToService(BluetoothService.INT_MESSAGE, BluetoothService.MESSAGE_RESTART);
+                    sendMessageToService(BluetoothService.MESSAGE_RESTART);
                     break;
             }
         }

@@ -207,7 +207,6 @@ public class Gestures {
             Log.v(TAG, "Run Return");
         }
         public void sendEvent(MotionEvent event) {
-            Log.v(TAG, "send event");
             if(mKeepRunning)
                 try {
                     mInstr.sendPointerSync(event);
