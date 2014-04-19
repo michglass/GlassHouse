@@ -128,7 +128,7 @@ public class SpellingMenuActivity extends BluetoothActivity {
                 Log.v(TAG, "On Item Click Listener");
                 GraceCard card = (GraceCard) mGraceCardScrollAdapter.getItem(i);
 
-                if( (((String) card.getText()).compareTo(START_GAME) == 0) ||
+                if( (((String) card.getText()).compareTo(DIFFERENT_WORD) == 0) ||
                         (((String) card.getText()).compareTo(START_GAME) == 0)) {
                     menuHierarchy.getSlider().stopSlider();
                     Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);

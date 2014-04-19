@@ -82,7 +82,7 @@ public class SpellLogic {
 
         // get the current word
         if(sameWord) {
-            gameWord = mGameWords.get(SpellingGameActivity.GAME_NUMBER);
+            gameWord = shuffleWord(mGameWords.get(SpellingGameActivity.GAME_NUMBER));
         } else {
             int i = getRandomIndex(mGameWords.size(), SpellingGameActivity.GAME_NUMBER);
             gameWord = shuffleWord(mGameWords.get(i));
@@ -148,7 +148,7 @@ public class SpellLogic {
         int nextIndex = getRandomIndex(len, -1);
 
         for(int i=0; i<unshuffledWord.length(); i++) {
-            shuffledWord = shuffledWord.concat(Character.toString(unshuffledWord.charAt(i)));
+            shuffledWord = shuffledWord.concat(Character.toString(unshuffledWord.charAt(nextIndex)));
             nextIndex = getRandomIndex(len, nextIndex);
         }
         Log.v(TAG, "Unshuffled: " + unshuffledWord);
