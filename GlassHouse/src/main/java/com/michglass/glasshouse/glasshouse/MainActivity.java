@@ -624,7 +624,6 @@ public class MainActivity extends Activity {
     /**
      * Send Message To Service (1)
      * Sends a non-Android related message to Android
-
      * @param message Message for service
      */
     public void sendMessageToService(int message) {
