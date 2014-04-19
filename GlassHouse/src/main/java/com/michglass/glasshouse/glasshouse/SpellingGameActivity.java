@@ -1,6 +1,7 @@
 package com.michglass.glasshouse.glasshouse;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -38,9 +39,13 @@ public class SpellingGameActivity extends BluetoothActivity {
         // disable user input
         isInputEnabled = false;
 
+        // get extra from menu activity
+        Intent intent = getIntent();
+        boolean wordFlag = intent.getBooleanExtra("wordFlag", false);
+
         // Start the Game
         SpellingGameSurface gameSurface = new SpellingGameSurface(this);
-        mSpellingLogic = new SpellLogic(gameSurface, gameHandler);
+        mSpellingLogic = new SpellLogic(gameSurface, gameHandler, wordFlag);
         mSpellingLogic.startGame();
         setContentView(gameSurface);
     }
@@ -48,7 +53,6 @@ public class SpellingGameActivity extends BluetoothActivity {
     protected void onDestroy() {
         super.onDestroy();
         mSpellingLogic.stopGame();
-        GAME_NUMBER++;
         Log.v(TAG, "On Destroy");
     }
 
