@@ -114,7 +114,7 @@ public class BluetoothService extends Service {
         Log.v(TAG, "On Start Command: " + startId);
 
         // start connection with android device
-        // connect();
+        connect();
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -125,7 +125,7 @@ public class BluetoothService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.v(TAG, "On Bind");
-        connect();
+        //connect();
         return mBluetoothServiceMessenger.getBinder();
     }
     /**

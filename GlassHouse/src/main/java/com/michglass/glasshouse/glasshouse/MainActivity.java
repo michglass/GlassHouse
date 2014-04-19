@@ -158,12 +158,16 @@ public class MainActivity extends Activity {
                 context.startActivity(intent);
                 return;
             } else if (graceCard.getGraceCardType() == GraceCardType.SPELLING){
-                Intent intent = new Intent(context, SpellingGameActivity.class);
+                Intent intent = new Intent(context, SpellingMenuActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 context.startActivity(intent);
                 return;
             } else if (graceCard.getGraceCardType() == GraceCardType.BACK){
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
+            } else if (graceCard.getGraceCardType() == GraceCardType.MEDIA) {
+                Intent camIntent = new Intent(context, CameraMenuActivity.class);
+                camIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                context.startActivity(camIntent);
             }
             else if(graceCard.getGraceCardType() == GraceCardType.EXIT){
                 finish();
@@ -213,6 +217,7 @@ public class MainActivity extends Activity {
         if(!mBound) {
             bindService(new Intent(this, BluetoothService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
+        }
 
         // activate and go!
         mCardScrollView.activate();
@@ -242,9 +247,6 @@ public class MainActivity extends Activity {
 
             }
         }, 2000);
-
-
-        }
     }
 
 
@@ -322,6 +324,10 @@ public class MainActivity extends Activity {
 
                 placeHolder = new GraceCard(this, mGameCardsAdapter, "", GraceCardType.GAMES);
                 placeHolder.addImage(R.drawable.main_games).setImageLayout(Card.ImageLayout.FULL);
+                mBaseCardsAdapter.pushCardBack(placeHolder);
+
+                //TODO check if correct
+                placeHolder = new GraceCard(this, new GraceCardScrollerAdapter(), "Media", GraceCardType.MEDIA);
                 mBaseCardsAdapter.pushCardBack(placeHolder);
 
                 placeHolder = new GraceCard(this, mTutorialAdapter, "", GraceCardType.TUTORIAL);

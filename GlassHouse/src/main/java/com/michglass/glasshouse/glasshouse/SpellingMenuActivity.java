@@ -53,7 +53,6 @@ public class SpellingMenuActivity extends BluetoothActivity {
         GraceCard startCard = new GraceCard(this, mGraceCardScrollAdapter, START_GAME, GraceCardType.NONE);
         GraceCard goBackCard = new GraceCard(this, mGraceCardScrollAdapter, GO_GAME_MENU, GraceCardType.NONE);
 
-
         // set up view and adapter
         mCardScrollView = new GraceCardScrollView(this, cardScrollViewListener);
         mGraceCardScrollAdapter = new GraceCardScrollerAdapter();
@@ -77,15 +76,19 @@ public class SpellingMenuActivity extends BluetoothActivity {
 
         if(FROM_GAME) {
             Log.v(TAG, "From Game");
+            // stop current slider and set up new slider
             menuHierarchy.getSlider().stopSlider();
             menuHierarchy.setSlider(new Slider(new Gestures()));
-            menuHierarchy.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
+
+            // set up different cards
             mGraceCardScrollAdapter.popCardFront();
             mGraceCardScrollAdapter.pushCardFront(
                     new GraceCard(this, mGraceCardScrollAdapter, SAME_WORD, GraceCardType.NONE));
             mGraceCardScrollAdapter.pushCardFront(
-                    new GraceCard(this, mGraceCardScrollAdapter, DIFFERENT_WORD, GraceCardType.NONE)
-            );
+                    new GraceCard(this, mGraceCardScrollAdapter, DIFFERENT_WORD, GraceCardType.NONE));
+
+            // modify slider and view and show new view
+            menuHierarchy.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
             mCardScrollView.setAdapter(mGraceCardScrollAdapter);
             mCardScrollView.activate();
             setContentView(mCardScrollView);
