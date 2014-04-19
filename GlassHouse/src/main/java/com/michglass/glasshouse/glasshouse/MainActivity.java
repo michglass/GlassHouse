@@ -180,9 +180,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "On Create");
 
-        // Start the BT Service
-        startService(new Intent(this, BluetoothService.class));
-
         // initialize all hierarchy adapters and add cards to them
         buildMenuHierarchy();
         lastSelectedCard = null;
@@ -584,6 +581,11 @@ public class MainActivity extends Activity {
 
             // Send a first message to the service
             setUpMessage();
+
+            // start service, only if not already connected
+            if(mBluetoothState != BluetoothService.STATE_CONNECTED) {
+                startBTService();
+            }
         }
         /**
          * Only called when Service unexpectedly disconnected!!
@@ -595,6 +597,13 @@ public class MainActivity extends Activity {
         }
     };
 
+    /**
+     * Start the Bluetooth Service
+     */
+    private void startBTService() {
+        // Start the BT Service
+        startService(new Intent(this, BluetoothService.class));
+    }
     /**
      * Send to Android (1)
      * Send a byte array to android
