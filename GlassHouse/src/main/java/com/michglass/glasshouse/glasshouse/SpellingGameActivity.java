@@ -24,7 +24,7 @@ public class SpellingGameActivity extends BluetoothActivity {
     private Handler gameHandler;
 
     // indicates which word to pic
-    public static int GAME_NUMBER = 0;
+    public static int WORD_NUMBER = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

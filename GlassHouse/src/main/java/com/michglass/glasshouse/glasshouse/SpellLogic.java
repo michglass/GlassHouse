@@ -27,6 +27,7 @@ public class SpellLogic {
     private ArrayList<String> mGameWords;
     private String gameWord;
     private String resultWord;
+    private String correctWord; // to compare the spelled word with
 
     // word width and height
     private final int SHUFFLED_CONT_WIDTH;
@@ -73,23 +74,31 @@ public class SpellLogic {
         mGameWords = new ArrayList<String>();
         mGameWords.add("cat");
         mGameWords.add("dog");
-        mGameWords.add("submarine");
+        mGameWords.add("mouse");
+        mGameWords.add("michigan");
+        mGameWords.add("fun");
+        mGameWords.add("chicken");
+        mGameWords.add("house");
+        mGameWords.add("jelly");
+        mGameWords.add("pink");
+        mGameWords.add("blue");
+        mGameWords.add("dance");
+        mGameWords.add("cow");
+        mGameWords.add("purple");
+        mGameWords.add("bambi");
         mGameWords.add("music");
-        mGameWords.add("ab");
-        mGameWords.add("nice");
-        mGameWords.add("a");
-
 
         // get the current word
         if(sameWord) {
-            gameWord = shuffleWord(mGameWords.get(SpellingGameActivity.GAME_NUMBER));
+            gameWord = shuffleWord(mGameWords.get(SpellingGameActivity.WORD_NUMBER));
+            correctWord = mGameWords.get(SpellingGameActivity.WORD_NUMBER);
         } else {
-            int i = getRandomIndex(mGameWords.size(), SpellingGameActivity.GAME_NUMBER);
+            int i = getRandomIndex(mGameWords.size(), SpellingGameActivity.WORD_NUMBER);
             gameWord = shuffleWord(mGameWords.get(i));
-            SpellingGameActivity.GAME_NUMBER = i;
+            correctWord = mGameWords.get(i);
+            SpellingGameActivity.WORD_NUMBER = i;
         }
-        Log.v(TAG, "Game Number: " + SpellingGameActivity.GAME_NUMBER);
-        gameWord = mGameWords.get(SpellingGameActivity.GAME_NUMBER);
+        Log.v(TAG, "Game Number: " + SpellingGameActivity.WORD_NUMBER);
 
         // set up game handler
         mGameHandler = gameHandler;
@@ -126,30 +135,97 @@ public class SpellLogic {
     /**
      * Get Random index
      * Select a new index, make sure it isn't the same than the last one
+     * This is the index for the next word
+     * @param size Possible range of index
+     * @param lastIndex Last selected word
      */
     private int getRandomIndex(int size, int lastIndex) {
+        Log.v(TAG, "Get Rand Index");
         Random r = new Random();
-        int newIndex = r.nextInt(size-1); // size-1 is the range of random number
+        int newIndex;
+
+        if(size-1 == 0) {
+            return 0;
+        } else {
+            newIndex = r.nextInt(size-1);
+            Log.v(TAG, "new Index: " + newIndex);
+        }
 
         while(newIndex == lastIndex) {
             newIndex = r.nextInt(size-1);
+            Log.v(TAG, "new Index: " + newIndex);
         }
-        Log.v(TAG, "Last Index: " + lastIndex);
-        Log.v(TAG, "New Index: " + newIndex);
         return newIndex;
+    }
+    /**
+     * Get new index
+     * Get a index for shuffling the word
+     * @param size Possible range of index
+     */
+    private int getNewIndex(int size) {
+
+        Random r = new Random();
+        int newIndex;
+
+        if(size-1 == 0) {
+            return 0;
+        } else {
+            newIndex = r.nextInt(size-1);
+        }
+        return newIndex;
+    }
+    /**
+     * Replace char at a given position
+     * @param word Word that needs a char replacement
+     * @param pos Position of the replacement
+     */
+    private String replaceChar(String word, int pos) {
+        char replChar;
+        char oldChar = word.charAt(pos);
+        StringBuilder sb = new StringBuilder(word);
+
+        if(pos == 0) {
+            replChar = word.charAt(1);
+            sb.setCharAt(1, oldChar);
+        } else {
+            replChar = word.charAt(word.length()-2);
+            sb.setCharAt(word.length()-2, oldChar);
+        }
+        sb.setCharAt(pos, replChar);
+
+        return sb.toString();
     }
     /**
      * Shuffle Word
      * shuffle the game word
      */
     private String shuffleWord(String unshuffledWord) {
+        String word = unshuffledWord;
         String shuffledWord = "";
+        StringBuilder sb = new StringBuilder(unshuffledWord); // For deleting a char that has been picked
         int len = unshuffledWord.length();
-        int nextIndex = getRandomIndex(len, -1);
+        int nextIndex = -1;
 
-        for(int i=0; i<unshuffledWord.length(); i++) {
+        while (len > 0){
+            Log.v(TAG, "Word Builder While");
+
+            // update the index
+            nextIndex = getNewIndex(len);
+
+            // get a random symbol from the unscrambled word
             shuffledWord = shuffledWord.concat(Character.toString(unshuffledWord.charAt(nextIndex)));
-            nextIndex = getRandomIndex(len, nextIndex);
+
+            // update the unscrambled word (delete selected symbol)
+            sb.deleteCharAt(nextIndex);
+            unshuffledWord = sb.toString();
+            len = unshuffledWord.length();
+        }
+
+        // make sure at least the last and first letter are not in the same position
+        if(shuffledWord.charAt(0) == word.charAt(0)) {
+            shuffledWord = replaceChar(shuffledWord, 0);
+        } else if (shuffledWord.charAt(shuffledWord.length()-1) == word.charAt(word.length()-1)) {
+            shuffledWord = replaceChar(shuffledWord, shuffledWord.length()-1);
         }
         Log.v(TAG, "Unshuffled: " + unshuffledWord);
         Log.v(TAG, "Shuffled: " + shuffledWord);
@@ -184,7 +260,7 @@ public class SpellLogic {
             resultWord = resultWord.concat(l.getLetter());
 
         Log.v(TAG, "Spelled Word: " + resultWord);
-        return gameWord.compareTo(resultWord) == 0;
+        return correctWord.compareTo(resultWord) == 0;
     }
     // game over dialog
     private void gameOverDialog(boolean isGameWon) {
