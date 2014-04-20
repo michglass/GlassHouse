@@ -569,6 +569,8 @@ public class MainActivity extends Activity {
 
                         // contact updates
                         GraceContactCard.clearContacts();
+                        mCommContactsAdapter.clearCards();
+
                         final int numContacts = settings.getInt(NUM_CONTACTS_KEY);
                         for (int i = 1; i <= numContacts; i++) {
                             final String name_key = "contact_" + i + "_name";
@@ -577,6 +579,13 @@ public class MainActivity extends Activity {
                             final String number = Integer.toString(settings.getInt(number_key));
                             GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, GraceCardType.CONTACT);
                         }
+
+                        // now add these contacts to the contacts adapter and notify change
+                        for(GraceContactCard C: GraceContactCard.contactList){
+                            mCommContactsAdapter.pushCardBack(C);
+                            Log.v(TAG, "Contact added to Adapter. Name: " + C.name);
+                        }
+                        mCommContactsAdapter.notifyDataSetChanged();
 
                     } catch (JSONException e) {
                         e.printStackTrace();
