@@ -440,6 +440,8 @@ public class MainActivity extends Activity {
 
     /**
      * Start the Bluetooth Service
+     * Called in Service Connected Callback after Activity binds to Service
+     * Start Service only when not already connected
      */
     private void startBTService() {
         // Start the BT Service

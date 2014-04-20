@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by Oliver
@@ -62,7 +63,7 @@ public class SpellLogic {
     private Handler mGameHandler;
 
     // Constructor
-    public SpellLogic(SpellingGameSurface gameSurface, Handler gameHandler) {
+    public SpellLogic(SpellingGameSurface gameSurface, Handler gameHandler, boolean sameWord) {
 
         Log.v(TAG, "Constructor");
         mSurfaceHolder = gameSurface.getHolder();
@@ -78,9 +79,15 @@ public class SpellLogic {
         mGameWords.add("nice");
         mGameWords.add("a");
 
+
         // get the current word
-        if(SpellingGameActivity.GAME_NUMBER == mGameWords.size())
-            SpellingGameActivity.GAME_NUMBER = 0;
+        if(sameWord) {
+            gameWord = shuffleWord(mGameWords.get(SpellingGameActivity.GAME_NUMBER));
+        } else {
+            int i = getRandomIndex(mGameWords.size(), SpellingGameActivity.GAME_NUMBER);
+            gameWord = shuffleWord(mGameWords.get(i));
+            SpellingGameActivity.GAME_NUMBER = i;
+        }
         Log.v(TAG, "Game Number: " + SpellingGameActivity.GAME_NUMBER);
         gameWord = mGameWords.get(SpellingGameActivity.GAME_NUMBER);
 
@@ -116,6 +123,38 @@ public class SpellLogic {
         resultWord = "";
     }
 
+    /**
+     * Get Random index
+     * Select a new index, make sure it isn't the same than the last one
+     */
+    private int getRandomIndex(int size, int lastIndex) {
+        Random r = new Random();
+        int newIndex = r.nextInt(size-1); // size-1 is the range of random number
+
+        while(newIndex == lastIndex) {
+            newIndex = r.nextInt(size-1);
+        }
+        Log.v(TAG, "Last Index: " + lastIndex);
+        Log.v(TAG, "New Index: " + newIndex);
+        return newIndex;
+    }
+    /**
+     * Shuffle Word
+     * shuffle the game word
+     */
+    private String shuffleWord(String unshuffledWord) {
+        String shuffledWord = "";
+        int len = unshuffledWord.length();
+        int nextIndex = getRandomIndex(len, -1);
+
+        for(int i=0; i<unshuffledWord.length(); i++) {
+            shuffledWord = shuffledWord.concat(Character.toString(unshuffledWord.charAt(nextIndex)));
+            nextIndex = getRandomIndex(len, nextIndex);
+        }
+        Log.v(TAG, "Unshuffled: " + unshuffledWord);
+        Log.v(TAG, "Shuffled: " + shuffledWord);
+        return shuffledWord;
+    }
     // initiate the dimensions for the letter rectangle
     private void initletterRectDim() {
         lRectWidth = (SHUFFLED_CONT_RIGHT - SHUFFLED_CONT_LEFT)/gameWord.length();

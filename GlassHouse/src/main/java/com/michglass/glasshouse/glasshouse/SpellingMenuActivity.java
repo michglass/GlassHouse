@@ -128,13 +128,19 @@ public class SpellingMenuActivity extends BluetoothActivity {
                 Log.v(TAG, "On Item Click Listener");
                 GraceCard card = (GraceCard) mGraceCardScrollAdapter.getItem(i);
 
-                if( ((String) card.getText()).compareTo(START_GAME) == 0 ||
-                    ((String) card.getText()).compareTo(DIFFERENT_WORD) == 0 ||
-                    ((String) card.getText()).compareTo(SAME_WORD) == 0) {
+                if( (((String) card.getText()).compareTo(DIFFERENT_WORD) == 0) ||
+                        (((String) card.getText()).compareTo(START_GAME) == 0)) {
                     menuHierarchy.getSlider().stopSlider();
                     Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);
+                    gameIntent.putExtra("wordFlag", false);
                     startActivity(gameIntent);
-                } else if(((String) card.getText()).compareTo(GO_GAME_MENU) == 0) {
+                } else if( ((String) card.getText()).compareTo(SAME_WORD) == 0 ) {
+                    menuHierarchy.getSlider().stopSlider();
+                    Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);
+                    gameIntent.putExtra("wordFlag", true);
+                    startActivity(gameIntent);
+                }
+                else if(((String) card.getText()).compareTo(GO_GAME_MENU) == 0) {
                     finish();
                 }
             }
