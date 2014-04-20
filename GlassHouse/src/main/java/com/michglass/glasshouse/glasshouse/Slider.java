@@ -72,7 +72,7 @@ public class Slider extends Thread {
     private Gestures gestures;
 
     // Timer Variable
-    private int TIMER = 3000;
+    static private int TIMER = 3000;
 
     /**
      * Slider
@@ -86,6 +86,12 @@ public class Slider extends Thread {
         this.setGestures(gestures);
     }
 
+    public void setScrollSpeed(final int scrollSpeed) {
+        if (scrollSpeed >= 1 && scrollSpeed <= 10)
+            TIMER = scrollSpeed;
+        else
+            Log.e(TAG, "setScrollSpeed was passed illegal value, " + scrollSpeed);
+    }
 
     public Gestures getGestures() {
         return gestures;

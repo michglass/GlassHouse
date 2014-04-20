@@ -5,46 +5,34 @@ package com.michglass.glasshouse.glasshouse;
  * Date: 2/26/14
  */
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.FileObserver;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.provider.ContactsContract;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 
 import com.google.android.glass.app.Card;
-import com.google.android.glass.media.CameraManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.util.Map;
-
 public class MainActivity extends Activity {
 
     // Debug
-    private static final String TAG = "Main Activity";
+    private static final String TAG = "MainActivity";
     public Context context = this;
 
-    // Messages from BT
-    private static final int CAMERA_REQ = 5;
-    private static final int VIDEO_REQ = 6;
+    public static final String SCROLL_SPEED_KEY = "SCROLL_SPEED";
+    public static final String NUM_CONTACTS_KEY = "NUM_CONTACTS";
 
     // BT Variables
     private Messenger mBluetoothServiceMessenger;
@@ -52,9 +40,7 @@ public class MainActivity extends Activity {
     private final Messenger clientMessenger = new Messenger(new ServiceHandler());
     private int mBluetoothState = BluetoothService.STATE_NONE;
 
-
     // UI Variables
-    private Map<String, String> mContacts;
     private GraceCardScrollView mCardScrollView;
     private GraceCard lastSelectedCard;
     private MenuHierarchy menuHierarchy;
@@ -100,7 +86,7 @@ public class MainActivity extends Activity {
             // long ass switch for cards that have functions
             final String cardText = (String) graceCard.getText();
             if (graceCard.getGraceCardType() == GraceCardType.CAMERA) {
-                takePicture();
+
                 return;
 
             } else if (graceCard.getGraceCardType() == GraceCardType.WELCOME){
@@ -117,7 +103,7 @@ public class MainActivity extends Activity {
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
 
             } else if (graceCard.getGraceCardType() == GraceCardType.VIDEO) {
-                recordVideo();
+
                 return;
 
             } else if (graceCard.getGraceCardType() == GraceCardType.REDO) {
@@ -186,24 +172,6 @@ public class MainActivity extends Activity {
 
         // keep screen from dimming
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-
-        // grab contacts
-        new AsyncTask<Void, Void, Void> () {
-
-            @Override
-            protected Void doInBackground(Void... params) {
-                Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null,null, null);
-                while (phones.moveToNext())
-                {
-                    final String name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-                    final String number = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                    Log.e(TAG, "contact retrieved: " + name + " with number " + number);
-                    mContacts.put(name, number);
-                }
-                return null;
-            }
-        }.execute();
     }
 
     public void onStart() {
@@ -363,7 +331,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
         for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
-            Log.v(TAG, "Contact added to Adapter. Name: " + C.Name);
+            Log.v(TAG, "Contact added to Adapter. Name: " + C.name);
         }
         mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
 
@@ -429,134 +397,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "Exiting buildMenuHierarchy()");
     }
 
-    /**
-     * On Activity Result
-     * System callback method for startActivityForResult()
-     * @param requestCode Code that we put in startActivityForResult
-     * @param resultCode Code that indicates if Bluetooth connection was established
-     */
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-
-        if (resultCode != RESULT_OK)
-            return;
-
-        switch (requestCode) {
-
-            case CAMERA_REQ:
-            {
-                final String picturePath = intent.getStringExtra(CameraManager.EXTRA_PICTURE_FILE_PATH);
-                // for now this is not gonna work
-                // processPicture.execute(picturePath);
-                break;
-            }
-            case VIDEO_REQ:
-            {
-                break;
-            }
-            default:
-        }
-
-        super.onActivityResult(requestCode, resultCode, intent);
-    }
-
     // Utility functions
-
-    private AsyncTask<String, Void, Uri> processPicture = new AsyncTask<String, Void, Uri>() {
-
-        private ProgressDialog pd;
-
-        @Override
-        protected void onPreExecute() {
-            pd = new ProgressDialog(MainActivity.this);
-            pd.setMessage("Processing...");
-            pd.setCancelable(false);
-            pd.setIndeterminate(true);
-            pd.show();
-        }
-
-        @Override
-        protected Uri doInBackground(String... params) {
-            Uri result = null;
-            while ((result = processPictureWhenReady(params[0])) == null)
-                ;
-
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute (Uri picture) {
-            pd.dismiss();
-            Log.e(TAG, "picture path on onPost = " + picture.toString());
-            insertScreenshotIntoPostMediaMenu(picture);
-        }
-    };
-
-    private Uri processPictureWhenReady(final String picturePath) {
-        final File pictureFile = new File(picturePath);
-
-        if (pictureFile.exists()) {
-            Log.e(TAG, "picture file done, path = " + picturePath.toString());
-            return buildFileUri(picturePath.toString());
-        } else {
-            // The file does not exist yet. Before starting the file observer, you
-            // can update your UI to let the user know that the application is
-            // waiting for the picture (for example, by displaying the thumbnail
-            // image and a progress indicator).
-
-            final File parentDirectory = pictureFile.getParentFile();
-            FileObserver observer = new FileObserver(parentDirectory.getPath()) {
-                // Protect against additional pending events after CLOSE_WRITE is
-                // handled.
-                private boolean isFileWritten;
-
-                @Override
-                public void onEvent(int event, String path) {
-                    if (!isFileWritten) {
-                        // For safety, make sure that the file that was created in
-                        // the directory is actually the one that we're expecting.
-                        File affectedFile = new File(parentDirectory, path);
-                        isFileWritten = (event == FileObserver.CLOSE_WRITE
-                                && affectedFile.equals(pictureFile));
-
-                        if (isFileWritten) {
-                            stopWatching();
-
-                            // Now that the file is ready, recursively call
-                            // processPictureWhenReady again (on the UI thread).
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    processPictureWhenReady(picturePath);
-                                }
-                            });
-                        }
-                    }
-                }
-            };
-            observer.startWatching();
-        }
-        return null;
-    }
-
-    private void insertScreenshotIntoPostMediaMenu(Uri mediaLocation) {
-        GraceCard screenshotCard = new GraceCard(this, null, "", GraceCardType.SCREENSHOT);
-        // mPostMediaCardsAdapter.pushCardFront(screenshotCard);
-    }
-
-    private void takePicture() {
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        startActivityForResult(intent, CAMERA_REQ);
-    }
-
-    private void recordVideo() {
-        Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-        startActivityForResult(intent, VIDEO_REQ);
-    }
-
-    private Uri buildFileUri(String pathToFile) {
-        return Uri.parse("file://" + pathToFile);
-    }
 
     /**
      * Bluetooth Utility Functions
@@ -720,6 +561,26 @@ public class MainActivity extends Activity {
                     break;
                 case BluetoothService.ANDROID_MESSAGE:
                     Log.v(TAG, "Android Message: " + (String)msg.obj);
+                    try {
+                        final JSONObject settings = new JSONObject(msg.obj.toString());
+
+                        // slider speed update
+                        menuHierarchy.getSlider().setScrollSpeed(settings.getInt(SCROLL_SPEED_KEY));
+
+                        // contact updates
+                        GraceContactCard.clearContacts();
+                        final int numContacts = settings.getInt(NUM_CONTACTS_KEY);
+                        for (int i = 1; i <= numContacts; i++) {
+                            final String name_key = "contact_" + i + "_name";
+                            final String number_key = "contact_" + i + "_number";
+                            final String name = settings.getString(name_key);
+                            final String number = Integer.toString(settings.getInt(number_key));
+                            GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, GraceCardType.CONTACT);
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                     //TODO Rodney: Do sth with string (json string)
                     break;
                 case BluetoothService.COMMAND_OK:
