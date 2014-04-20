@@ -1,5 +1,6 @@
 package com.michglass.glasshouse.glasshouse;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -9,11 +10,14 @@ import android.graphics.PorterDuff;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+
+import com.google.android.glass.media.CameraManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -197,8 +201,9 @@ public class PictureActivity extends BluetoothActivity {
                 imgBitmap.compress(Bitmap.CompressFormat.JPEG, 40, byteOutS);
                 try {
                     Log.v(TAG, "Try saving pic");
-                    String pathEnding = "DCIM/Camera/mytest.jpg";
+                    String pathEnding = "/Pictures/mytest.jpg";
                     String pathBegin = Environment.getExternalStorageDirectory().getPath();
+                    Log.v(TAG, "Path Start: " + pathBegin);
                     String path = pathBegin + pathEnding;
                     Log.v(TAG, "SD Card av: " +isSDCARDAvailable());
                     Log.v(TAG, "Path: " + path);
