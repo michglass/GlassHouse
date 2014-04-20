@@ -8,7 +8,14 @@ import java.util.ArrayList;
  * Created by vbganesh on 3/25/14.
  */
 public class GraceMessageCard extends GraceCard{
-    public String Message;
+    private String Message;
+    public String getMessage() {
+        return Message;
+    }
+
+    public void setMessage(String message) {
+        Message = message;
+    }
     public static ArrayList<GraceMessageCard> messageList = new ArrayList<GraceMessageCard>();
     GraceMessageCard(Context context, GraceCardScrollerAdapter adapter, String mess, GraceCardType cardType){
         super(context, adapter, mess, cardType);

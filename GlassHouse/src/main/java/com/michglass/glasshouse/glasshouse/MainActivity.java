@@ -33,7 +33,8 @@ public class MainActivity extends Activity {
 
     public static final String SCROLL_SPEED_KEY = "SCROLL_SPEED";
     public static final String NUM_CONTACTS_KEY = "NUM_CONTACTS";
-
+    private boolean sendAsEmail = false;
+    private boolean contactsLoaded = false;
     // BT Variables
     private Messenger mBluetoothServiceMessenger;
     private boolean mBound;
@@ -56,9 +57,11 @@ public class MainActivity extends Activity {
     GraceCardScrollerAdapter mCommMessagesInterstitialAdapter;
     GraceCardScrollerAdapter mMessageSentAdapter;
     GraceCardScrollerAdapter mMessageNotSentAdapter;
+    GraceCardScrollerAdapter mMessageTypeAdapter;
 
     /**for bluetooth messaging*/
     private static BluetoothSMS bluetoothMessage = new BluetoothSMS();
+    private org.json.JSONObject current_message;
 
     /**
      * Activity Lifecycle Methods
@@ -95,15 +98,15 @@ public class MainActivity extends Activity {
             } else if (graceCard.getGraceCardType() == GraceCardType.COMM){
 
                 // crossfade to interstitial contact adapter
+                current_message = new JSONObject();
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
 
-                menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
+                //menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
 
             } else if (graceCard.getGraceCardType() == GraceCardType.GAMES){
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
 
             } else if (graceCard.getGraceCardType() == GraceCardType.VIDEO) {
-
                 return;
 
             } else if (graceCard.getGraceCardType() == GraceCardType.REDO) {
@@ -114,17 +117,57 @@ public class MainActivity extends Activity {
                 // launch contacts picker, send media to phone or whatever
             } else if(graceCard.getGraceCardType() == GraceCardType.CONTACT) {
                 GraceContactCard contact = (GraceContactCard) graceCard;
-                bluetoothMessage.setNum(contact.phoneNumber);
-
+                //bluetoothMessage.setNum(contact.phoneNumber);
+                try {
+                    current_message.put("name", contact.getName());
+                    if(current_message.getString("type").equals("email")){
+                        current_message.put("emailAddress", contact.getEmailAddress());
+                    }
+                    else if(current_message.getString("type").equals("text")){
+                        current_message.put("number", contact.getPhoneNumber());
+                    }
+                }
+                catch(JSONException j){
+                    Log.e(TAG, j.toString());
+                }
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
                 menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
 
+            }
+            else if(graceCard.getGraceCardType() == GraceCardType.SEND_AS_EMAIL){
+                Log.v(TAG, "Sending As Email");
+                try {
+                    current_message.put("type", "email");
+                }
+                catch(JSONException j){
+                    Log.e(TAG, j.toString());
+                }
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+                menuHierarchy.crossfade(2, mCommContactsAdapter);
+            }
+            else if(graceCard.getGraceCardType() == GraceCardType.SEND_AS_TEXT){
+                try {
+                    current_message.put("type", "text");
+                }
+                catch(JSONException j){
+                    Log.e(TAG, j.toString());
+                }
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+                menuHierarchy.crossfade(2, mCommContactsAdapter);
             }
             else if(graceCard.getGraceCardType() == GraceCardType.MESSAGE) {
                 //TODO Send JSON OBJ to Android
                 //bluetoothMessage.setMessage((String) graceCard.getText());
                 //sendMessageToService(BluetoothService.TEXT_MESSAGE, bluetoothMessage.buildBluetoothSMS());
+                GraceMessageCard Message = (GraceMessageCard) graceCard;
                 Log.v(TAG, bluetoothMessage.buildBluetoothSMS());
+                try {
+                    current_message.put("message", Message.getMessage());
+                    sendToAndroid(current_message);
+                }
+                catch(JSONException j){
+                    Log.e(TAG, j.toString());
+                }
 
                 if(mBluetoothState == BluetoothService.STATE_CONNECTED){
                     menuHierarchy.crossfade(mMessageSentAdapter);
@@ -277,13 +320,14 @@ public class MainActivity extends Activity {
         mCommMessagesInterstitialAdapter = new GraceCardScrollerAdapter();
         mMessageSentAdapter = new GraceCardScrollerAdapter();
         mMessageNotSentAdapter = new GraceCardScrollerAdapter();
+        mMessageTypeAdapter = new GraceCardScrollerAdapter();
 
         mCardScrollView = new GraceCardScrollView(this, ScrollerListener);
         menuHierarchy = new MenuHierarchy(mCardScrollView, mWelcomeSplashScreenAdapter, getResources().getInteger(
                 android.R.integer.config_longAnimTime));
 
         // mBaseCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Take a Picture or Record a Video", GraceCardType.MEDIA)); leaving this out of beta, can't inject taps into media capture application
-        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "", GraceCardType.COMM);
+        placeHolder = new GraceCard(this, mMessageTypeAdapter, "", GraceCardType.COMM);
         placeHolder.addImage(R.drawable.main_message).setImageLayout(Card.ImageLayout.FULL);
         mBaseCardsAdapter.pushCardBack(placeHolder);
 
@@ -315,6 +359,18 @@ public class MainActivity extends Activity {
 
 
         // communication adapters
+        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "Send As Email", GraceCardType.SEND_AS_EMAIL);
+        //placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+        mMessageTypeAdapter.pushCardBack(placeHolder);
+
+        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "Send As Text", GraceCardType.SEND_AS_TEXT);
+        //placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+        mMessageTypeAdapter.pushCardBack(placeHolder);
+
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK);
+        //placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+        mMessageTypeAdapter.pushCardBack(placeHolder);
+
         placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.NONE);
         placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
         mCommContactInterstitialAdapter.pushCardBack(placeHolder);
@@ -323,26 +379,27 @@ public class MainActivity extends Activity {
         placeHolder.addImage(R.drawable.messages_message_interstitial).setImageLayout(Card.ImageLayout.FULL);
         mCommMessagesInterstitialAdapter.pushCardBack(placeHolder);
 
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Mom", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Mom", "7346459032", "vijayganesh999@gmail.com",GraceCardType.CONTACT);
         Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Dad", "7346459032", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Tim Wood", "7346459032", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Danny Francken", "7346459032", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Dad", "7346459032", "",GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Tim Wood", "7346459032", "", GraceCardType.CONTACT);
+        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Danny Francken", "7346459032", "",GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
         for(GraceContactCard C: GraceContactCard.contactList){
             mCommContactsAdapter.pushCardBack(C);
-            Log.v(TAG, "Contact added to Adapter. Name: " + C.name);
+            Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
         }
         mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
 
         // messages adapter
+
         GraceMessageCard.addCard(this, mMessageSentAdapter, "I love you.", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mMessageSentAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mMessageSentAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mMessageSentAdapter, "What's for dinner?", GraceCardType.MESSAGE);
         for(GraceMessageCard M: GraceMessageCard.messageList){
             mCommMessagesAdapter.pushCardBack(M);
-            Log.v(TAG, "Message added to Adapter: " + M.Message);
+            Log.v(TAG, "Message added to Adapter: " + M.getMessage());
         }
         mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Return to Contact List", GraceCardType.BACK));
 
@@ -563,6 +620,7 @@ public class MainActivity extends Activity {
                     break;
                 case BluetoothService.ANDROID_MESSAGE:
                     Log.v(TAG, "Android Message: " + (String)msg.obj);
+                    /*
                     try {
                         final JSONObject settings = new JSONObject(msg.obj.toString());
 
@@ -579,21 +637,26 @@ public class MainActivity extends Activity {
                             final String number_key = "contact_" + i + "_number";
                             final String name = settings.getString(name_key);
                             final String number = Integer.toString(settings.getInt(number_key));
-                            GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, GraceCardType.CONTACT);
+
+                            GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, "", GraceCardType.CONTACT);
                         }
 
                         // now add these contacts to the contacts adapter and notify change
                         for(GraceContactCard C: GraceContactCard.contactList){
-                            mCommContactsAdapter.pushCardBack(C);
-                            Log.v(TAG, "Contact added to Adapter. Name: " + C.name);
+                            mCommContactsAdapter.pushCardFront(C);
+
+                            Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
                         }
                         mCommContactsAdapter.notifyDataSetChanged();
 
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+
                     //TODO Rodney: Do sth with string (json string)
+                    */
                     break;
+
                 case BluetoothService.COMMAND_OK:
                     Log.v(TAG, "Command ok");
                     // Inject a Tap event

@@ -10,22 +10,49 @@ import java.util.ArrayList;
  */
 public class GraceContactCard extends GraceCard {
     private static final String TAG = "GraceContactCard";
-    public String name;
-    public String phoneNumber;
+    private String name;
+
+    private String phoneNumber;
+
+    private String emailAddress;
+
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
     public static ArrayList<GraceContactCard> contactList = new ArrayList <GraceContactCard>();
 
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
+    }
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
     GraceContactCard(Context context, GraceCardScrollerAdapter adapter, String name, String number,
-                     GraceCardType cardType)
+                     String emailAddress, GraceCardType cardType)
     {
         super(context, adapter, name, cardType);
         Log.v(TAG, "Entered Contact Card Constructor");
         phoneNumber = number;
         this.name = name;
+        this.emailAddress = emailAddress;
         Log.v(TAG, "Finished Contact Card Constructor");
     }
 
     public static void addCard(Context context, GraceCardScrollerAdapter adapter, String name,
-                               String phoneNumber, GraceCardType cardType)
+                               String phoneNumber, String emailAddress, GraceCardType cardType)
     {
         Log.v(TAG, "Right before card added");
         for (GraceContactCard contactCard : contactList) {
@@ -34,7 +61,7 @@ public class GraceContactCard extends GraceCard {
                 return;
             }
         }
-        GraceContactCard.contactList.add(new GraceContactCard(context, adapter, name, phoneNumber, cardType));
+        GraceContactCard.contactList.add(new GraceContactCard(context, adapter, name, phoneNumber, emailAddress, cardType));
         Log.v(TAG, "Right after card added");
     }
 
