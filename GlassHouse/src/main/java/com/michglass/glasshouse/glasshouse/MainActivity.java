@@ -393,16 +393,23 @@ public class MainActivity extends Activity {
         placeHolder.addImage(R.drawable.messages_message_interstitial).setImageLayout(Card.ImageLayout.FULL);
         mCommMessagesInterstitialAdapter.pushCardBack(placeHolder);
 
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Mom", "7346459032", "vijayganesh999@gmail.com",GraceCardType.CONTACT);
+        GraceContactCard placeHolderContact;
+        placeHolderContact = GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Mom", "7346459032", "vijayganesh999@gmail.com",GraceCardType.CONTACT);
+        placeHolderContact.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
         Log.v(TAG, "Tim Wood contact added to adapter");
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Dad", "7346459032", "",GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Tim Wood", "7346459032", "", GraceCardType.CONTACT);
-        GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Danny Francken", "7346459032", "",GraceCardType.CONTACT);
+        placeHolderContact = GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Dad", "7346459032", "",GraceCardType.CONTACT);
+        placeHolderContact.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
+
+        placeHolderContact = GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Tim Wood", "7346459032", "", GraceCardType.CONTACT);
+        placeHolderContact.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
+
+        placeHolderContact = GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Danny Francken", "7346459032", "",GraceCardType.CONTACT);
+        placeHolderContact.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
+
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
-        for(GraceContactCard C: GraceContactCard.contactList){
-            C.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
-            mCommContactsAdapter.pushCardBack(C);
-            Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
+        for(int i = 0; i < GraceContactCard.contactList.size(); i++){
+            mCommContactsAdapter.pushCardBack(GraceContactCard.contactList.get(i));
+            Log.v(TAG, "Contact added to Adapter");
         }
         placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
         placeHolder.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
@@ -410,14 +417,19 @@ public class MainActivity extends Activity {
 
         // messages adapter
 
-        GraceMessageCard.addCard(this, mMessageSentAdapter, "Hey there!", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mMessageSentAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mMessageSentAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
-        GraceMessageCard.addCard(this, mMessageSentAdapter, "What's for dinner?", GraceCardType.MESSAGE);
-        for(GraceMessageCard M: GraceMessageCard.messageList){
-            M.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
-            mCommMessagesAdapter.pushCardBack(M);
-            Log.v(TAG, "Message added to Adapter: " + M.getMessage());
+        GraceMessageCard placeHolderMessage;
+        placeHolderMessage = GraceMessageCard.addCard(this, mMessageSentAdapter, "Hey there!", GraceCardType.MESSAGE);
+        placeHolderMessage.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
+        placeHolderMessage = GraceMessageCard.addCard(this, mMessageSentAdapter, "Can we go to Disney World?", GraceCardType.MESSAGE);
+        placeHolderMessage.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
+        placeHolderMessage = GraceMessageCard.addCard(this, mMessageSentAdapter, "What's for dinner?", GraceCardType.MESSAGE);
+        placeHolderMessage.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
+        placeHolderMessage = GraceMessageCard.addCard(this, mMessageSentAdapter, "Could I get help with something?", GraceCardType.MESSAGE);
+        placeHolderMessage.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
+
+        for(int i = 0; i < GraceMessageCard.messageList.size(); i++){
+            mCommMessagesAdapter.pushCardBack(GraceMessageCard.messageList.get(i));
+            Log.v(TAG, "Message added to Adapter");
         }
         placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.BACK);
         placeHolder.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
@@ -449,7 +461,7 @@ public class MainActivity extends Activity {
 
         // Tutorial Adapter
 
-        placeHolder = new GraceCard(this, mBaseCardsAdapter, "Menu items automatically change every few seconds.", GraceCardType.NONE);
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "Menu items automatically change every few seconds.", GraceCardType.BACK);
         placeHolder.addImage(R.drawable.tutorial_side_1).setImageLayout(Card.ImageLayout.LEFT);
         mTutorialAdapter.pushCardBack(placeHolder);
 

@@ -89,7 +89,7 @@ public class SpellingMenuActivity extends BluetoothActivity {
 
             mPostGameScrollAdapter = new GraceCardScrollerAdapter();
             placeholder = new GraceCard(this, null, "", GraceCardType.PLAY_AGAIN);
-            placeholder.addImage(R.drawable.spelling_playagain);
+            placeholder.addImage(R.drawable.spelling_playagain).setImageLayout(Card.ImageLayout.FULL);
             mPostGameScrollAdapter.pushCardBack(placeholder);
 
          //   mPreGameScrollAdapter.pushCardBack(
@@ -97,7 +97,7 @@ public class SpellingMenuActivity extends BluetoothActivity {
          //   .addImage(R.drawable.spelling_playagain).setImageLayout(Card.ImageLayout.FULL));
 
             placeholder = new GraceCard(this, null, "", GraceCardType.EXIT);
-            placeholder.addImage(R.drawable.games_back);
+            placeholder.addImage(R.drawable.games_back).setImageLayout(Card.ImageLayout.FULL);
             mPostGameScrollAdapter.pushCardBack(placeholder);
 
          /*

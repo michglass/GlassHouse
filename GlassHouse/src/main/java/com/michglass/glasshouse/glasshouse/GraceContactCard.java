@@ -51,18 +51,20 @@ public class GraceContactCard extends GraceCard {
         Log.v(TAG, "Finished Contact Card Constructor");
     }
 
-    public static void addCard(Context context, GraceCardScrollerAdapter adapter, String name,
+    public static GraceContactCard addCard(Context context, GraceCardScrollerAdapter adapter, String name,
                                String phoneNumber, String emailAddress, GraceCardType cardType)
     {
         Log.v(TAG, "Right before card added");
         for (GraceContactCard contactCard : contactList) {
             if (contactCard.name.equals(name)) {
                 Log.v(TAG, "Not adding " + name + ", " + phoneNumber + " because it's a duplicate!");
-                return;
+                return null;
             }
         }
-        GraceContactCard.contactList.add(new GraceContactCard(context, adapter, name, phoneNumber, emailAddress, cardType));
+        GraceContactCard c;
+        GraceContactCard.contactList.add(c = new GraceContactCard(context, adapter, name, phoneNumber, emailAddress, cardType));
         Log.v(TAG, "Right after card added");
+        return c;
     }
 
     public static void clearContacts() {
