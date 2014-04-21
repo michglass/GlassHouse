@@ -432,11 +432,11 @@ public class MainActivity extends Activity {
         GraceMessageCard placeHolderMessage;
 
         placeHolderMessage = new GraceMessageCard(this, mMessageSentAdapter, "Hey there!", GraceCardType.MESSAGE);
-        placeHolderMessage.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
+        placeHolderMessage.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
         mCommMessagesAdapter.pushCardBack(placeHolderMessage);
 
         placeHolderMessage = new GraceMessageCard(this, mMessageSentAdapter, "What's for dinner?!", GraceCardType.MESSAGE);
-        placeHolderMessage.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
+        placeHolderMessage.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
         mCommMessagesAdapter.pushCardBack(placeHolderMessage);
 
     /*
