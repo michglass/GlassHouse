@@ -620,41 +620,45 @@ public class MainActivity extends Activity {
                     break;
                 case BluetoothService.ANDROID_MESSAGE:
                     Log.v(TAG, "Android Message: " + (String)msg.obj);
-                    /*
+
                     try {
                         final JSONObject settings = new JSONObject(msg.obj.toString());
 
                         // slider speed update
-                        menuHierarchy.getSlider().setScrollSpeed(settings.getInt(SCROLL_SPEED_KEY));
-
-                        // contact updates
-                        GraceContactCard.clearContacts();
-                        mCommContactsAdapter.clearCards();
+                        //menuHierarchy.getSlider().setScrollSpeed(settings.getInt(SCROLL_SPEED_KEY));
 
                         final int numContacts = settings.getInt(NUM_CONTACTS_KEY);
-                        for (int i = 1; i <= numContacts; i++) {
-                            final String name_key = "contact_" + i + "_name";
-                            final String number_key = "contact_" + i + "_number";
-                            final String name = settings.getString(name_key);
-                            final String number = Integer.toString(settings.getInt(number_key));
+                        if(numContacts != 0){
+                            // contact updates
+                            GraceContactCard.clearContacts();
+                            mCommContactsAdapter.clearCards();
+                            System.out.println(msg.obj);
 
-                            GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, "", GraceCardType.CONTACT);
+                            for (int i = 0; i < numContacts; i++) {
+                                final String name_key = "contact_" + i + "_name";
+                                final String number_key = "contact_" + i + "_number";
+                                final String name = settings.getString(name_key);
+                                final String number = settings.getString(number_key);
+                                System.out.println("name: " + name + " number: "+ number);
+                                GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, "", GraceCardType.CONTACT);
+                            }
+
+                            // now add these contacts to the contacts adapter and notify change
+                            for(GraceContactCard C: GraceContactCard.contactList){
+                                mCommContactsAdapter.pushCardFront(C);
+
+                                Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
+                            }
+                            mCommContactsAdapter.notifyDataSetChanged();
                         }
 
-                        // now add these contacts to the contacts adapter and notify change
-                        for(GraceContactCard C: GraceContactCard.contactList){
-                            mCommContactsAdapter.pushCardFront(C);
-
-                            Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
-                        }
-                        mCommContactsAdapter.notifyDataSetChanged();
 
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
 
                     //TODO Rodney: Do sth with string (json string)
-                    */
+
                     break;
 
                 case BluetoothService.COMMAND_OK:
