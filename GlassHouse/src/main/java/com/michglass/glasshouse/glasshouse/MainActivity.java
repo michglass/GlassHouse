@@ -89,8 +89,9 @@ public class MainActivity extends Activity {
             // long ass switch for cards that have functions
             final String cardText = (String) graceCard.getText();
             if (graceCard.getGraceCardType() == GraceCardType.CAMERA) {
-
-                return;
+                menuHierarchy.getSlider().stopSlider();
+                Intent picInt = new Intent(context, PictureActivity.class);
+                startActivity(picInt);
 
             } else if (graceCard.getGraceCardType() == GraceCardType.WELCOME){
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
@@ -182,11 +183,13 @@ public class MainActivity extends Activity {
             }
             else if(graceCard.getGraceCardType() == GraceCardType.TICTACTOE){
                 // Launch Tic-Tac-Toe Activity
+                menuHierarchy.getSlider().stopSlider();
                 Intent intent = new Intent(context, TicTacToeActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 context.startActivity(intent);
                 return;
             } else if (graceCard.getGraceCardType() == GraceCardType.SPELLING){
+                menuHierarchy.getSlider().stopSlider();
                 Intent intent = new Intent(context, SpellingMenuActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 context.startActivity(intent);
@@ -194,9 +197,10 @@ public class MainActivity extends Activity {
             } else if (graceCard.getGraceCardType() == GraceCardType.BACK){
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
             } else if (graceCard.getGraceCardType() == GraceCardType.MEDIA) {
-                Intent camIntent = new Intent(context, CameraMenuActivity.class);
-                camIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                context.startActivity(camIntent);
+                menuHierarchy.crossfade(graceCard.getNextAdapter());
+                //Intent camIntent = new Intent(context, CameraMenuActivity.class);
+                //camIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                //context.startActivity(camIntent);
             }
             else if(graceCard.getGraceCardType() == GraceCardType.EXIT){
                 finish();
@@ -273,7 +277,8 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Resume");
         if(!(lastSelectedCard == null) &&
            (lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE) ||
-            lastSelectedCard.getGraceCardType().equals(GraceCardType.SPELLING))){
+            lastSelectedCard.getGraceCardType().equals(GraceCardType.SPELLING)) ||
+            lastSelectedCard.getGraceCardType().equals(GraceCardType.CAMERA)){
            menuHierarchy.crossfade(lastSelectedCard.getNextAdapter());
         }
     }
