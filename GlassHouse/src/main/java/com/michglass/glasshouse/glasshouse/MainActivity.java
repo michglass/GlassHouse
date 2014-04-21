@@ -252,6 +252,9 @@ public class MainActivity extends Activity {
 
 
                 }
+                if(mBluetoothState == BluetoothService.STATE_CONNECTED){
+                    ((GraceCard) mWelcomeSplashScreenAdapter.getItem(0)).setFootnote(R.string.welcome_connected_footnote);
+                }
 
             }
         }, 2000);
@@ -336,7 +339,8 @@ public class MainActivity extends Activity {
         mBaseCardsAdapter.pushCardBack(placeHolder);
 
         //TODO check if correct
-        placeHolder = new GraceCard(this, new GraceCardScrollerAdapter(), "Media", GraceCardType.MEDIA);
+        placeHolder = new GraceCard(this, mMediaCardsAdapter, "", GraceCardType.MEDIA);
+        placeHolder.addImage(R.drawable.main_camera).setImageLayout(Card.ImageLayout.FULL);
         mBaseCardsAdapter.pushCardBack(placeHolder);
 
         placeHolder = new GraceCard(this, mTutorialAdapter, "", GraceCardType.TUTORIAL);
@@ -347,9 +351,16 @@ public class MainActivity extends Activity {
         placeHolder.addImage(R.drawable.main_exit).setImageLayout(Card.ImageLayout.FULL);
         mBaseCardsAdapter.pushCardBack(placeHolder);
 
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Take a Picture", GraceCardType.CAMERA));
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mPostMediaCardsAdapter, "Record a Video", GraceCardType.VIDEO));
-        mMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
+        // media adapter
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.CAMERA);
+        placeHolder.addImage(R.drawable.media_take_pic).setImageLayout(Card.ImageLayout.FULL);
+        mMediaCardsAdapter.pushCardBack(placeHolder);
+
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+        placeHolder.addImage(R.drawable.media_back).setImageLayout(Card.ImageLayout.FULL);
+        mMediaCardsAdapter.pushCardBack(placeHolder);
+
+        /* functionality not currently supported
 
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mMediaCardsAdapter, "Redo", GraceCardType.REDO));
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Save Media", GraceCardType.SAVE)); // loop back to main menu for now
@@ -357,20 +368,23 @@ public class MainActivity extends Activity {
         mPostMediaCardsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK));
         Log.v(TAG, "Post Media Adapter Built");
 
+        */
+
 
         // communication adapters
-        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "Send As Email", GraceCardType.SEND_AS_EMAIL);
-        //placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "", GraceCardType.SEND_AS_EMAIL);
+        placeHolder.addImage(R.drawable.send_email).setImageLayout(Card.ImageLayout.FULL);
         mMessageTypeAdapter.pushCardBack(placeHolder);
 
-        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "Send As Text", GraceCardType.SEND_AS_TEXT);
-        //placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+        placeHolder = new GraceCard(this, mCommContactInterstitialAdapter, "", GraceCardType.SEND_AS_TEXT);
+        placeHolder.addImage(R.drawable.send_text).setImageLayout(Card.ImageLayout.FULL);
         mMessageTypeAdapter.pushCardBack(placeHolder);
 
-        placeHolder = new GraceCard(this, mBaseCardsAdapter, "Back", GraceCardType.BACK);
-        //placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+        placeHolder.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
         mMessageTypeAdapter.pushCardBack(placeHolder);
 
+        // contact interstitial
         placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.NONE);
         placeHolder.addImage(R.drawable.messages_contact_interstitial).setImageLayout(Card.ImageLayout.FULL);
         mCommContactInterstitialAdapter.pushCardBack(placeHolder);
@@ -386,27 +400,36 @@ public class MainActivity extends Activity {
         GraceContactCard.addCard(this, mCommMessagesInterstitialAdapter, "Danny Francken", "7346459032", "",GraceCardType.CONTACT);
         Log.v(TAG, "Right before loop to add contacts to adapter" + GraceContactCard.contactList.size());
         for(GraceContactCard C: GraceContactCard.contactList){
+            C.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
             mCommContactsAdapter.pushCardBack(C);
             Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
         }
-        mCommContactsAdapter.pushCardBack(new GraceCard(this, mBaseCardsAdapter, "Return to Main Menu", GraceCardType.BACK));
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+        placeHolder.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
+        mCommContactsAdapter.pushCardBack(placeHolder);
 
         // messages adapter
 
-        GraceMessageCard.addCard(this, mMessageSentAdapter, "I love you.", GraceCardType.MESSAGE);
+        GraceMessageCard.addCard(this, mMessageSentAdapter, "Hey there!", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mMessageSentAdapter, "Can we go to Disney World sometime?", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mMessageSentAdapter, "Could you help me with something?", GraceCardType.MESSAGE);
         GraceMessageCard.addCard(this, mMessageSentAdapter, "What's for dinner?", GraceCardType.MESSAGE);
         for(GraceMessageCard M: GraceMessageCard.messageList){
+            M.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
             mCommMessagesAdapter.pushCardBack(M);
             Log.v(TAG, "Message added to Adapter: " + M.getMessage());
         }
-        mCommMessagesAdapter.pushCardBack(new GraceCard(this, mCommContactsAdapter, "Return to Contact List", GraceCardType.BACK));
+        placeHolder = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.BACK);
+        placeHolder.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
+        mCommMessagesAdapter.pushCardBack(placeHolder);
 
-        placeHolder = new GraceCard(this, mBaseCardsAdapter, "Message Sent!", GraceCardType.BACK);
+        // post comm confirmation screens
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+        placeHolder.addImage(R.drawable.message_sent).setImageLayout(Card.ImageLayout.FULL);
         mMessageSentAdapter.pushCardBack(placeHolder);
 
-        placeHolder = new GraceCard(this, mBaseCardsAdapter, "Message failed to send.", GraceCardType.BACK);
+        placeHolder = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+        placeHolder.addImage(R.drawable.message_failed).setImageLayout(Card.ImageLayout.FULL);
         mMessageNotSentAdapter.pushCardBack(placeHolder);
 
 

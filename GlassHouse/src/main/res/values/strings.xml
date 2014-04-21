@@ -6,7 +6,7 @@
     <string name="contact">CONTACT</string>
     <string name="welcome_connecting">Connecting to Parrot on Android...</string>
     <string name="welcome">Welcome to Parrot!</string>
-    <string name="welcome_connecting_footnote">Start the Parrot application on Android</string>
+    <string name="welcome_connecting_footnote">Start Parrot on Android</string>
     <string name="welcome_connected_footnote">Tap \'OK\' to begin.</string>
     <string name="welcome_connected">Connected to Parrot!</string>
 </resources>

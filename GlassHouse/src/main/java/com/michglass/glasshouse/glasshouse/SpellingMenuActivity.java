@@ -4,10 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
+
+import com.google.android.glass.app.Card;
 
 /**
  * Created by Oliver
@@ -21,7 +22,9 @@ public class SpellingMenuActivity extends BluetoothActivity {
     // UI Variables
     private MenuHierarchy menuHierarchy;
     private GraceCardScrollView mCardScrollView;
-    private GraceCardScrollerAdapter mGraceCardScrollAdapter;
+    private GraceCardScrollerAdapter mPreGameScrollAdapter;
+    private GraceCardScrollerAdapter mPostGameScrollAdapter;
+    private GraceCard placeholder;
 
     // Text for Cards
     private final String START_GAME = "Start Game";
@@ -50,18 +53,22 @@ public class SpellingMenuActivity extends BluetoothActivity {
         // set the listener for the view
         AdapterView.OnItemClickListener cardScrollViewListener = setCardScrollViewListener();
 
-        GraceCard startCard = new GraceCard(this, mGraceCardScrollAdapter, START_GAME, GraceCardType.NONE);
-        GraceCard goBackCard = new GraceCard(this, mGraceCardScrollAdapter, GO_GAME_MENU, GraceCardType.NONE);
+        GraceCard startCard = new GraceCard(this, mPreGameScrollAdapter, "", GraceCardType.START_GAME);
+        startCard.addImage(R.drawable.games_spell).setImageLayout(Card.ImageLayout.FULL);
+
+        GraceCard goBackCard = new GraceCard(this, mPreGameScrollAdapter, "", GraceCardType.EXIT);
+        goBackCard.addImage(R.drawable.games_back).setImageLayout(Card.ImageLayout.FULL);
+
 
         // set up view and adapter
         mCardScrollView = new GraceCardScrollView(this, cardScrollViewListener);
-        mGraceCardScrollAdapter = new GraceCardScrollerAdapter();
+        mPreGameScrollAdapter = new GraceCardScrollerAdapter();
 
         // add cards to adapter
-        mGraceCardScrollAdapter.pushCardBack(startCard);
-        mGraceCardScrollAdapter.pushCardBack(goBackCard);
+        mPreGameScrollAdapter.pushCardBack(startCard);
+        mPreGameScrollAdapter.pushCardBack(goBackCard);
 
-        menuHierarchy = new MenuHierarchy(mCardScrollView, mGraceCardScrollAdapter, getResources().getInteger(
+        menuHierarchy = new MenuHierarchy(mCardScrollView, mPreGameScrollAdapter, getResources().getInteger(
                 android.R.integer.config_longAnimTime));
         // Set content view
 
@@ -80,17 +87,30 @@ public class SpellingMenuActivity extends BluetoothActivity {
             menuHierarchy.getSlider().stopSlider();
             menuHierarchy.setSlider(new Slider(new Gestures()));
 
-            mGraceCardScrollAdapter = new GraceCardScrollerAdapter();
-            mGraceCardScrollAdapter.pushCardBack(
-                    new GraceCard(this, mGraceCardScrollAdapter, SAME_WORD, GraceCardType.NONE));
-            mGraceCardScrollAdapter.pushCardBack(
-                    new GraceCard(this, mGraceCardScrollAdapter, DIFFERENT_WORD, GraceCardType.NONE));
-            mGraceCardScrollAdapter.pushCardBack(
-                    new GraceCard(this, mGraceCardScrollAdapter, GO_GAME_MENU, GraceCardType.NONE));
+            mPostGameScrollAdapter = new GraceCardScrollerAdapter();
+            placeholder = new GraceCard(this, null, "", GraceCardType.PLAY_AGAIN);
+            placeholder.addImage(R.drawable.spelling_playagain);
+            mPostGameScrollAdapter.pushCardBack(placeholder);
+
+         //   mPreGameScrollAdapter.pushCardBack(
+         //           new GraceCard(this, mPreGameScrollAdapter, "", GraceCardType.PLAY_AGAIN)
+         //   .addImage(R.drawable.spelling_playagain).setImageLayout(Card.ImageLayout.FULL));
+
+            placeholder = new GraceCard(this, null, "", GraceCardType.EXIT);
+            placeholder.addImage(R.drawable.games_back);
+            mPostGameScrollAdapter.pushCardBack(placeholder);
+
+         /*
+            mPreGameScrollAdapter.pushCardBack(
+                    new GraceCard(this, mPreGameScrollAdapter, DIFFERENT_WORD, GraceCardType.NONE));
+            mPreGameScrollAdapter.pushCardBack(
+                    new GraceCard(this, mPreGameScrollAdapter, GO_GAME_MENU, GraceCardType.NONE));
+
+         */
 
             // modify slider and view and show new view
-            menuHierarchy.getSlider().setNumCards(mGraceCardScrollAdapter.getCount());
-            mCardScrollView.setAdapter(mGraceCardScrollAdapter);
+            menuHierarchy.getSlider().setNumCards(mPostGameScrollAdapter.getCount());
+            mCardScrollView.setAdapter(mPostGameScrollAdapter);
             mCardScrollView.activate();
             setContentView(mCardScrollView);
             menuHierarchy.getSlider().start();
@@ -126,21 +146,22 @@ public class SpellingMenuActivity extends BluetoothActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.v(TAG, "On Item Click Listener");
-                GraceCard card = (GraceCard) mGraceCardScrollAdapter.getItem(i);
+                GraceCard card = (GraceCard) mPreGameScrollAdapter.getItem(i);
 
-                if( (((String) card.getText()).compareTo(DIFFERENT_WORD) == 0) ||
-                        (((String) card.getText()).compareTo(START_GAME) == 0)) {
+                if( (card.getGraceCardType() == GraceCardType.PLAY_AGAIN ||
+                        card.getGraceCardType() == GraceCardType.START_GAME)) {
                     menuHierarchy.getSlider().stopSlider();
                     Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);
                     gameIntent.putExtra("wordFlag", false);
                     startActivity(gameIntent);
-                } else if( ((String) card.getText()).compareTo(SAME_WORD) == 0 ) {
+                }
+                else if( ((String) card.getText()).compareTo(SAME_WORD) == 0 ) {
                     menuHierarchy.getSlider().stopSlider();
                     Intent gameIntent = new Intent(thisContext, SpellingGameActivity.class);
                     gameIntent.putExtra("wordFlag", true);
                     startActivity(gameIntent);
                 }
-                else if(((String) card.getText()).compareTo(GO_GAME_MENU) == 0) {
+                else if(card.getGraceCardType() == GraceCardType.EXIT) {
                     finish();
                 }
             }

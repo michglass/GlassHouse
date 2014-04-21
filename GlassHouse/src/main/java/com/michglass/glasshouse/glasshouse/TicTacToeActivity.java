@@ -52,8 +52,11 @@ public class TicTacToeActivity extends BluetoothActivity {
         AdapterView.OnItemClickListener cardScrollViewListener = setCardScrollViewListener();
 
         // set up cards
-        GraceCard startCard = new GraceCard(this, mGraceCardScrollAdapter, START_GAME, GraceCardType.NONE);
-        GraceCard goBackCard = new GraceCard(this, mGraceCardScrollAdapter, GO_BACK, GraceCardType.NONE);
+        GraceCard startCard = new GraceCard(this, null, "", GraceCardType.START_GAME);
+        startCard.addImage(R.drawable.games_tictactoe).setImageLayout(Card.ImageLayout.FULL);
+
+        GraceCard goBackCard = new GraceCard(this, null, "", GraceCardType.EXIT);
+        goBackCard.addImage(R.drawable.games_back).setImageLayout(Card.ImageLayout.FULL);
 
         // set up view and adapter
         mGraceCardScrollView = new GraceCardScrollView(this, cardScrollViewListener);
@@ -108,12 +111,12 @@ public class TicTacToeActivity extends BluetoothActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Log.v(TAG, "On Item Click Listener");
-                Card c = (Card) mGraceCardScrollAdapter.getItem(i);
+                GraceCard c = (GraceCard) mGraceCardScrollAdapter.getItem(i);
 
-                if(c.getText().equals(GO_BACK)) {
+                if(c.getGraceCardType() == GraceCardType.EXIT) {
                     finish();
                 }
-                if(c.getText().equals(START_GAME)) {
+                if(c.getGraceCardType() == GraceCardType.START_GAME) {
 
                     menuHierarchy.getSlider().stopSlider();
 

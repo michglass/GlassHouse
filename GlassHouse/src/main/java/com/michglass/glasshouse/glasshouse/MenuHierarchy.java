@@ -61,7 +61,7 @@ public class MenuHierarchy {
     public void crossfade(GraceCardScrollerAdapter next_adapter){
         this.getSlider().stopSlider();
 
-        if(next_adapter == null){
+        if(next_adapter == null || next_adapter.getCount() == 0){
             return;
         }
         mCardScrollView.setAlpha(0f);
@@ -83,7 +83,7 @@ public class MenuHierarchy {
 
 
     private void swapAdapters(GraceCardScrollerAdapter next_adapter){
-        if(next_adapter.equals(null)) {
+        if(next_adapter.equals(null) || next_adapter.getCount() == 0) {
             Log.v("swap", "swap adapters: next adapter equals null");
             return;
         }
