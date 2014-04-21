@@ -277,8 +277,8 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Resume");
         if(!(lastSelectedCard == null) &&
            (lastSelectedCard.getGraceCardType().equals(GraceCardType.TICTACTOE) ||
-            lastSelectedCard.getGraceCardType().equals(GraceCardType.SPELLING)) ||
-            lastSelectedCard.getGraceCardType().equals(GraceCardType.CAMERA)){
+            lastSelectedCard.getGraceCardType().equals(GraceCardType.SPELLING) ||
+            lastSelectedCard.getGraceCardType().equals(GraceCardType.CAMERA))){
            menuHierarchy.crossfade(lastSelectedCard.getNextAdapter());
         }
     }
