@@ -61,8 +61,8 @@ public class GraceContactCard extends GraceCard {
                 return null;
             }
         }
-        GraceContactCard c;
-        GraceContactCard.contactList.add(c = new GraceContactCard(context, adapter, name, phoneNumber, emailAddress, cardType));
+        GraceContactCard c = new GraceContactCard(context, adapter, name, phoneNumber, emailAddress, cardType);
+        GraceContactCard.contactList.add(c);
         Log.v(TAG, "Right after card added");
         return c;
     }

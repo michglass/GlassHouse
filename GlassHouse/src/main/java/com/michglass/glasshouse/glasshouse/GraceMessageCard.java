@@ -23,8 +23,8 @@ public class GraceMessageCard extends GraceCard{
     }
     public static GraceMessageCard addCard(Context context, GraceCardScrollerAdapter adapter, String mess,
                                GraceCardType cardType){
-        GraceMessageCard m;
-        GraceMessageCard.messageList.add(m = new GraceMessageCard(context, adapter, mess, cardType));
+        GraceMessageCard m = new GraceMessageCard(context, adapter, mess, cardType);
+        GraceMessageCard.messageList.add(m);
         return m;
     }
 }
