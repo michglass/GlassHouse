@@ -730,15 +730,24 @@ public class MainActivity extends Activity {
                     Log.v(TAG, "Contact added to Adapter. Name: " + card.getName());
                 }
 
-                GraceCard back = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.BACK);
+                GraceCard back = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
                 back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
-                mCommMessagesAdapter.pushCardBack(back);
+                mCommContactsAdapter.pushCardBack(back);
                 mCommContactsAdapter.notifyDataSetChanged();
             }
 
             // message updates
             if (numMessages > 0) {
+                mCommMessagesAdapter.clearCards();
 
+                for (int i = 1; i <= numMessages; i++) {
+                    final String message_key = "message_" + i;
+                    GraceMessageCard messageCard = new GraceMessageCard(this, mMessageSentAdapter, settings.getString(message_key), GraceCardType.MESSAGE);
+                    messageCard.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
+                    mCommMessagesAdapter.pushCardBack(messageCard);
+                }
+
+                mCommMessagesAdapter.notifyDataSetChanged();
             }
 
         } catch (JSONException e) {
