@@ -134,7 +134,7 @@ public class MainActivity extends Activity {
                     Log.e(TAG, j.toString());
                 }
                 menuHierarchy.crossfade(graceCard.getNextAdapter());
-                menuHierarchy.crossfade(2, ((GraceCard) menuHierarchy.getCurrentAdapter().getItem(0)).getNextAdapter());
+                menuHierarchy.crossfade(2, mCommMessagesAdapter);
 
             }
             else if(graceCard.getGraceCardType() == GraceCardType.SEND_AS_EMAIL){
