@@ -3,6 +3,8 @@ package com.michglass.glasshouse.glasshouse;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.android.glass.app.Card;
+
 import java.util.ArrayList;
 
 /**
@@ -63,6 +65,7 @@ public class GraceContactCard extends GraceCard {
             }
         }
         GraceContactCard c = new GraceContactCard(context, adapter, name, phoneNumber, emailAddress, cardType);
+        c.addImage(R.drawable.contact_left).setImageLayout(Card.ImageLayout.LEFT);
         GraceContactCard.contactList.add(c);
         Log.v(TAG, "Right after card added");
         return c;
