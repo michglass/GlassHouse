@@ -33,6 +33,8 @@ public class MainActivity extends Activity {
 
     public static final String SCROLL_SPEED_KEY = "SCROLL_SPEED";
     public static final String NUM_CONTACTS_KEY = "NUM_CONTACTS";
+    public static final String NUM_MESSAGES_KEY = "NUM_MESSAGES";
+
     private boolean sendAsEmail = false;
     private boolean contactsLoaded = false;
     // BT Variables
@@ -678,44 +680,9 @@ public class MainActivity extends Activity {
                     Log.v(TAG, "message income");
                     break;
                 case BluetoothService.ANDROID_MESSAGE:
-                    Log.v(TAG, "Android Message: " + (String)msg.obj);
-                    /*
-                    try {
-                        final JSONObject settings = new JSONObject(msg.obj.toString());
-
-                        // slider speed update
-                        menuHierarchy.getSlider().setScrollSpeed(settings.getInt(SCROLL_SPEED_KEY));
-
-                        // contact updates
-                        GraceContactCard.clearContacts();
-                        mCommContactsAdapter.clearCards();
-
-                        final int numContacts = settings.getInt(NUM_CONTACTS_KEY);
-                        for (int i = 1; i <= numContacts; i++) {
-                            final String name_key = "contact_" + i + "_name";
-                            final String number_key = "contact_" + i + "_number";
-                            final String name = settings.getString(name_key);
-                            final String number = Integer.toString(settings.getInt(number_key));
-
-                            GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, "", GraceCardType.CONTACT);
-                        }
-
-                        // now add these contacts to the contacts adapter and notify change
-                        for(GraceContactCard C: GraceContactCard.contactList){
-                            mCommContactsAdapter.pushCardFront(C);
-
-                            Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
-                        }
-                        mCommContactsAdapter.notifyDataSetChanged();
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    //TODO Rodney: Do sth with string (json string)
-                    */
+                    Log.v(TAG, "Android Message: " + msg.obj.toString());
+                    updateSettings(msg.obj.toString());
                     break;
-
                 case BluetoothService.COMMAND_OK:
                     Log.v(TAG, "Command ok");
                     // Inject a Tap event
@@ -731,4 +698,48 @@ public class MainActivity extends Activity {
             }
         }
     }
+
+    private void updateSettings(String strSettings) {
+        try {
+            final JSONObject settings = new JSONObject(strSettings);
+
+            // slider speed update
+            menuHierarchy.getSlider().setScrollSpeed(settings.getInt(SCROLL_SPEED_KEY));
+            final int numContacts = settings.getInt(NUM_CONTACTS_KEY);
+            final int numMessages = settings.getInt(NUM_MESSAGES_KEY);
+
+            // contact updates
+            if (numContacts > 0) {
+                GraceContactCard.clearContacts();
+                mCommContactsAdapter.clearCards();
+
+                for (int i = 1; i <= numContacts; i++) {
+                    final String name_key = "contact_" + i + "_name";
+                    final String number_key = "contact_" + i + "_number";
+                    final String email_key = "contact_" + i + "_email";
+                    final String name = settings.getString(name_key);
+                    final String number = settings.getString(number_key);
+                    final String email = settings.getString(email_key);
+
+                    GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, email, GraceCardType.CONTACT);
+                }
+
+                // now add these contacts to the contacts adapter and notify change
+                for (GraceContactCard C : GraceContactCard.contactList) {
+                    mCommContactsAdapter.pushCardFront(C);
+                    Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
+                }
+                mCommContactsAdapter.notifyDataSetChanged();
+            }
+
+            // message updates
+            if (numMessages > 0) {
+
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }
+

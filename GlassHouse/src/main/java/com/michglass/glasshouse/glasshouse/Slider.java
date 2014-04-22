@@ -72,7 +72,7 @@ public class Slider extends Thread {
     private Gestures gestures;
 
     // Timer Variable
-    static private int TIMER = 3000;
+    static private int timer = 3000;
 
     /**
      * Slider
@@ -88,7 +88,7 @@ public class Slider extends Thread {
 
     public void setScrollSpeed(final int scrollSpeed) {
         if (scrollSpeed >= 1 && scrollSpeed <= 10)
-            TIMER = scrollSpeed;
+            timer = scrollSpeed * 1000;
         else
             Log.e(TAG, "setScrollSpeed was passed illegal value, " + scrollSpeed);
     }
@@ -120,7 +120,7 @@ public class Slider extends Thread {
 
             try {
                 Log.v(TAG, "Sleep");
-                sleep(TIMER);
+                sleep(timer);
             } catch (InterruptedException intE) {
                 Log.e(TAG, "Slider Interrupted", intE);
                 return;

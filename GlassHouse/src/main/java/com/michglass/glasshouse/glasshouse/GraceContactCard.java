@@ -40,6 +40,7 @@ public class GraceContactCard extends GraceCard {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+
     GraceContactCard(Context context, GraceCardScrollerAdapter adapter, String name, String number,
                      String emailAddress, GraceCardType cardType)
     {
