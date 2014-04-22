@@ -725,10 +725,14 @@ public class MainActivity extends Activity {
                 }
 
                 // now add these contacts to the contacts adapter and notify change
-                for (GraceContactCard C : GraceContactCard.contactList) {
-                    mCommContactsAdapter.pushCardFront(C);
-                    Log.v(TAG, "Contact added to Adapter. Name: " + C.getName());
+                for (GraceContactCard card : GraceContactCard.contactList) {
+                    mCommContactsAdapter.pushCardBack(card);
+                    Log.v(TAG, "Contact added to Adapter. Name: " + card.getName());
                 }
+
+                GraceCard back = new GraceCard(this, mCommContactsAdapter, "", GraceCardType.BACK);
+                back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
+                mCommMessagesAdapter.pushCardBack(back);
                 mCommContactsAdapter.notifyDataSetChanged();
             }
 
