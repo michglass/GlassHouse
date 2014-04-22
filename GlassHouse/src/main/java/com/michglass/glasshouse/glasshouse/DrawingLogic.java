@@ -237,6 +237,9 @@ public class DrawingLogic {
                         printGameMatrix();
                         resumeGameThread();
                     }
+                } else {
+                    Log.e(TAG, "Draw after User Input");
+                    sendMessageToActivity(TTTGameSurface.GAME_OVER);
                 }
             }
             Log.v(TAG, "Run Return");
@@ -384,6 +387,7 @@ public class DrawingLogic {
                         stopAIThread();
                         stopFillCellThread();
                         startGameThread();
+                        Log.e(TAG, "Draw after AI moves");
                         sendMessageToActivity(TTTGameSurface.GAME_OVER);
                     } else {
                         x = mOpenCells.get(count).getXVal();
