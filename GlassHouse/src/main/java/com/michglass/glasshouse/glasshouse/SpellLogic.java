@@ -75,18 +75,14 @@ public class SpellLogic {
         mGameWords.add("cat");
         mGameWords.add("dog");
         mGameWords.add("mouse");
-        mGameWords.add("michigan");
         mGameWords.add("fun");
-        mGameWords.add("chicken");
-        mGameWords.add("house");
-        mGameWords.add("jelly");
+        mGameWords.add("bambi");
         mGameWords.add("pink");
         mGameWords.add("blue");
-        mGameWords.add("dance");
         mGameWords.add("cow");
         mGameWords.add("purple");
-        mGameWords.add("bambi");
-        mGameWords.add("music");
+        mGameWords.add("toy");
+        mGameWords.add("car");
 
         // get the current word
         if(sameWord) {
@@ -436,7 +432,7 @@ public class SpellLogic {
 
                 if(mKeepRunning) {
                     try {
-                        sleep(2000);
+                        sleep(4000);
                     } catch (InterruptedException intE) {
                         Log.e(TAG, "Interrupted", intE);
                     }
