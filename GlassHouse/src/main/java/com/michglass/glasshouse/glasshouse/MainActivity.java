@@ -724,12 +724,13 @@ public class MainActivity extends Activity {
                     GraceContactCard.addCard(MainActivity.this, mCommMessagesInterstitialAdapter, name, number, email, GraceCardType.CONTACT);
                 }
 
-                // now add these contacts to the contacts adapter and notify change
+                // now add these contacts to the contacts adapter
                 for (GraceContactCard card : GraceContactCard.contactList) {
                     mCommContactsAdapter.pushCardBack(card);
                     Log.v(TAG, "Contact added to Adapter. Name: " + card.getName());
                 }
 
+                // add back card, then notify adapter
                 GraceCard back = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
                 back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
                 mCommContactsAdapter.pushCardBack(back);
@@ -747,6 +748,10 @@ public class MainActivity extends Activity {
                     mCommMessagesAdapter.pushCardBack(messageCard);
                 }
 
+                // add back card, then notify adapter
+                GraceCard back = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+                back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
+                mCommMessagesAdapter.pushCardBack(back);
                 mCommMessagesAdapter.notifyDataSetChanged();
             }
 
