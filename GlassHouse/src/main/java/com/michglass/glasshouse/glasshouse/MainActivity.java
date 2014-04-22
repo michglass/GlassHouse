@@ -708,6 +708,10 @@ public class MainActivity extends Activity {
             final int numContacts = settings.getInt(NUM_CONTACTS_KEY);
             final int numMessages = settings.getInt(NUM_MESSAGES_KEY);
 
+            // back card needed for contacts/messages
+            final GraceCard back = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
+            back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
+
             // contact updates
             if (numContacts > 0) {
                 GraceContactCard.clearContacts();
@@ -731,8 +735,6 @@ public class MainActivity extends Activity {
                 }
 
                 // add back card, then notify adapter
-                GraceCard back = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
-                back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
                 mCommContactsAdapter.pushCardBack(back);
                 mCommContactsAdapter.notifyDataSetChanged();
             }
@@ -744,13 +746,12 @@ public class MainActivity extends Activity {
                 for (int i = 1; i <= numMessages; i++) {
                     final String message_key = "message_" + i;
                     GraceMessageCard messageCard = new GraceMessageCard(this, mMessageSentAdapter, settings.getString(message_key), GraceCardType.MESSAGE);
+                    Log.e(TAG, "msg being added: " + settings.getString(message_key));
                     messageCard.addImage(R.drawable.message_left).setImageLayout(Card.ImageLayout.LEFT);
                     mCommMessagesAdapter.pushCardBack(messageCard);
                 }
 
                 // add back card, then notify adapter
-                GraceCard back = new GraceCard(this, mBaseCardsAdapter, "", GraceCardType.BACK);
-                back.addImage(R.drawable.message_back).setImageLayout(Card.ImageLayout.FULL);
                 mCommMessagesAdapter.pushCardBack(back);
                 mCommMessagesAdapter.notifyDataSetChanged();
             }
