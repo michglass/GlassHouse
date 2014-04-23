@@ -291,11 +291,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Stop");
 
         // Unbind from BT Service
-        if(mBound) {
-            sendMessageToService(BluetoothService.UNREGISTER_CLIENT);
-            unbindService(mConnection);
-            mBound = false;
-        }
+        unbindBTService();
 
         // Stop Injecting
         menuHierarchy.getSlider().getGestures().stopInjecting();
@@ -309,7 +305,7 @@ public class MainActivity extends Activity {
         Log.v(TAG, "On Destroy");
 
         // Stop the BT Service only in the component that calls startservice() !!
-        stopService(new Intent(this, BluetoothService.class));
+        stopBTService();
     }
 
     // create cards for each hierarchy, add to that's hierarchies adapter
@@ -566,6 +562,22 @@ public class MainActivity extends Activity {
         startService(new Intent(this, BluetoothService.class));
     }
     /**
+     * Stop BT Service
+     */
+    private void stopBTService() {
+        stopService(new Intent(this, BluetoothService.class));
+    }
+    /**
+     * Unbind from BT Service
+     */
+    private void unbindBTService() {
+        if(mBound) {
+            sendMessageToService(BluetoothService.UNREGISTER_CLIENT);
+            unbindService(mConnection);
+            mBound = false;
+        }
+    }
+    /**
      * Send to Android (1)
      * Send a byte array to android
      * @param androidmsg message for android
@@ -673,6 +685,19 @@ public class MainActivity extends Activity {
                         case BluetoothService.STATE_LISTENING:
                             Log.v(TAG, "State Listening");
                             break;
+                        case BluetoothService.BT_DISABLED:
+                            Log.e(TAG, "BT is Disabled");
+                            // unbing from service
+                            unbindBTService();
+                            // stop service
+                            stopBTService();
+                            break;
+                        case BluetoothService.NOT_PAIRED:
+                            Log.e(TAG, "Glass not Paired");
+                            // unbind from service
+                            unbindBTService();
+                            // stop service
+                            stopBTService();
                     }
                     break;
                 // in case this activity received a string message from phone

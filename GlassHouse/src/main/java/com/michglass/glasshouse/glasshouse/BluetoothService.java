@@ -55,6 +55,9 @@ public class BluetoothService extends Service {
     public static final int STATE_CONNECTING = 1; // connecting
     public static final int STATE_CONNECTED = 2; // connected
     public static final int STATE_LISTENING = 17; // listening
+    public static final int BT_DISABLED = 15;
+    public static final int NOT_PAIRED = 16;
+
     // Messages for Main Activity
     public static final int MESSAGE_STATE_CHANGE = 3; // indicates connection state change (debug)
     public static final int MESSAGE_INCOMING = 4; // message with string content (only for debug)
@@ -77,11 +80,11 @@ public class BluetoothService extends Service {
     public static int BOUND_COUNT = 0;
     private Messenger mClientMessenger;
     private final Messenger mBluetoothServiceMessenger = new Messenger(new ClientHandler());
-/*
-    public static final int PICTURE_MESSAGE = 14;
-    public static final int TEXT_MESSAGE = 15;
-    public static final int INT_MESSAGE = 16;
-*/
+
+    // booleans that check if BT is enabled and Glass is paired
+    private boolean isPaired;
+    private boolean isBTEnabled;
+
     /**
      * Service Methods: Handle Service Lifecycle
      * Handling messages from Client: Client meaning for example the Main Activity
@@ -99,10 +102,12 @@ public class BluetoothService extends Service {
         if(!AdapterEnabled()) {
             // Should always be enabled!
             Log.v(TAG, "Bluetooth not enabled");
+            isBTEnabled = false;
         } else {
+            isBTEnabled = true;
             Log.v(TAG, "Bluetooth already enabled"); // usually on Glass
             // find paired devices and connect to desired device
-            queryDevices();
+            isPaired = queryDevices();
         }
     }
     /**
@@ -173,19 +178,7 @@ public class BluetoothService extends Service {
         public void handleMessage(Message msg) {
 
             switch (msg.what) {
-                //TODO delete if new v works
-/*
-                case PICTURE_MESSAGE:
-                    Log.v(TAG, "Picture for Android");
-                    Bitmap bitMap = (Bitmap) msg.obj;
-                    // sendPictureToAndroid(bitMap);
-                    break;
-                case TEXT_MESSAGE:
-                    String text = (String) msg.obj;
-                    sendStringToAndroid(text);
-                    Log.v(TAG, "Text msg for Android");
-                    break;
-                    */
+
                 case ANDROID_DATA:
                     byte[] androidmsg;
                     if(msg.obj != null) {
@@ -305,11 +298,20 @@ public class BluetoothService extends Service {
 
         // Start thread to connect to device
         // Device is passed to obtain socket and Handler for sending messages to Activity
-        mConnectThread = new ConnectThread(mbtDevice);
-        mConnectThread.start();
 
-        // set state to connecting and send message to activity
-        setState(STATE_CONNECTING);
+        // make sure that BT is enabled and that glass is paired
+        if(!isBTEnabled) {
+            setState(BT_DISABLED);
+        } else if(!isPaired) {
+            setState(NOT_PAIRED);
+        } else {
+            // paired and bt enabled, start connecting
+            mConnectThread = new ConnectThread(mbtDevice);
+            mConnectThread.start();
+
+            // set state to connecting and send message to activity
+            setState(STATE_CONNECTING);
+        }
     }
     /**
      * Listen to incoming requests
@@ -426,7 +428,7 @@ public class BluetoothService extends Service {
      * Query all available devices
      * Assign Danny's (later Grace's) phone to the member device
      */
-    public void queryDevices() {
+    public boolean queryDevices() {
         Log.v(TAG, "query devices");
         // get all paired devices
         Set<BluetoothDevice> pairedDevices = mbtAdapter.getBondedDevices();
@@ -441,11 +443,14 @@ public class BluetoothService extends Service {
                     mbtDevice = btDevice;
                 }
             } else {
-                Log.v(TAG, "No devices found");
+                Log.e(TAG, "No devices found or Size > 1");
+                return false;
             }
         } catch (Exception e) {
             Log.e(TAG, "Query Error", e);
+            return false;
         }
+        return true;
     }
 
     /**
