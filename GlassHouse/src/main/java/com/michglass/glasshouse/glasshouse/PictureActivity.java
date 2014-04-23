@@ -5,11 +5,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -45,6 +47,9 @@ public class PictureActivity extends BluetoothActivity {
     private boolean isTakePic;
     private boolean isGoBack;
 
+    // Texts displayed on preview
+    private static final String TAKE_PIC = "Tap to take picture and to go back";
+
     @Override
     protected void onCreate(Bundle savedInst) {
         Log.v(TAG, "On Create");
@@ -75,13 +80,16 @@ public class PictureActivity extends BluetoothActivity {
         Log.v(TAG, "On Resume");
         super.onResume();
 
-        // take the picture
-        //takePicture();
+        // set up preview
+        PreviewThread previewThread = new PreviewThread(TAKE_PIC);
+        previewThread.start();
     }
     @Override
     protected void onStop() {
         Log.v(TAG, "On Stop");
         super.onStop();
+        // close camera
+        closeCam();
     }
 
     @Override
@@ -119,6 +127,7 @@ public class PictureActivity extends BluetoothActivity {
         }
         mCamera.startPreview();
         mCamera.takePicture(getShuttCallBack(), getRawCallback(), getPostCallback(), getJpgCallback());
+
     }
     // set up camera
     private void setupCam() {
@@ -137,6 +146,30 @@ public class PictureActivity extends BluetoothActivity {
             mCamera.release();
         } else {
             Log.e(TAG, "Camera Null");
+        }
+    }
+    // save picture on external storage
+    private void savePicture(Bitmap img) {
+        ByteArrayOutputStream byteOutS = new ByteArrayOutputStream();
+        img.compress(Bitmap.CompressFormat.JPEG, 40, byteOutS);
+        try {
+            Log.v(TAG, "Try saving pic");
+            String pathEnding = "/Pictures/mytest.jpg";
+            String pathBegin = Environment.getExternalStorageDirectory().getPath();
+            Log.v(TAG, "Path Start: " + pathBegin);
+            String path = pathBegin + pathEnding;
+            Log.v(TAG, "SD Card av: " +isSDCARDAvailable());
+            Log.v(TAG, "Path: " + path);
+            File outFile = new File(path);
+            boolean b = outFile.createNewFile();
+            Log.v(TAG, "Create File " + b);
+            FileOutputStream outFileS = new FileOutputStream(outFile);
+            outFileS.write(byteOutS.toByteArray());
+
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "File already exists");
+        } catch (IOException ioE) {
+            Log.e(TAG, "Write failed");
         }
     }
 
@@ -158,8 +191,6 @@ public class PictureActivity extends BluetoothActivity {
             @Override
             public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
                 Log.v(TAG, "Surface Destroyed");
-
-                closeCam();
             }
         };
     }
@@ -193,35 +224,63 @@ public class PictureActivity extends BluetoothActivity {
         return new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] bytes, Camera camera) {
-                isInputEnabled = true;
                 Log.v(TAG, "jpg callback");
-                //TODO Save Picture on glass somewhere (write external storage?!)
-                Bitmap imgBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                ByteArrayOutputStream byteOutS = new ByteArrayOutputStream();
-                imgBitmap.compress(Bitmap.CompressFormat.JPEG, 40, byteOutS);
-                try {
-                    Log.v(TAG, "Try saving pic");
-                    String pathEnding = "/Pictures/mytest.jpg";
-                    String pathBegin = Environment.getExternalStorageDirectory().getPath();
-                    Log.v(TAG, "Path Start: " + pathBegin);
-                    String path = pathBegin + pathEnding;
-                    Log.v(TAG, "SD Card av: " +isSDCARDAvailable());
-                    Log.v(TAG, "Path: " + path);
-                    File outFile = new File(path);
-                    boolean b = outFile.createNewFile();
-                    Log.v(TAG, "Create File " + b);
-                    FileOutputStream outFileS = new FileOutputStream(outFile);
-                    outFileS.write(byteOutS.toByteArray());
+                isInputEnabled = true;
 
-                } catch (FileNotFoundException e) {
-                    Log.e(TAG, "File not found");
-                } catch (IOException ioE) {
-                    Log.e(TAG, "Write failed");
-                }
+                // save picture on ext storage
+                Bitmap imgBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                savePicture(imgBitmap);
             }
         };
     }
     public boolean isSDCARDAvailable(){
         return Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+    }
+
+    /**
+     * Preview Thread
+     * Display text on the Screen before and after taking a picture
+     */
+    private class PreviewThread extends Thread {
+
+        // Debug
+        private static final String TAG = "Preview Thread";
+
+        // keep running
+        private boolean mKeepRunning;
+        private String displayText;
+        private Paint textPaint;
+
+        public PreviewThread(String text) {
+            displayText = text;
+            mKeepRunning = true;
+
+            // Text Paint
+            textPaint = new Paint();
+            textPaint.setColor(Color.WHITE);
+            textPaint.setTextSize(30f);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+        }
+
+        @Override
+        public void run() {
+            Log.v(TAG, "Run");
+
+            while (mKeepRunning) {
+
+                if(!mHolder.getSurface().isValid())
+                    continue;
+
+                mCanvas = mHolder.lockCanvas();
+
+                //mCanvas.drawColor(Color.GRAY);
+                mCanvas.drawText(displayText, mCanvas.getWidth()/2, mCanvas.getHeight()/2, textPaint);
+
+                mHolder.unlockCanvasAndPost(mCanvas);
+
+                mKeepRunning = false;
+            }
+            Log.v(TAG, "Run Return");
+        }
     }
 }
