@@ -49,10 +49,10 @@ public class TTTGameSurface extends SurfaceView {
         mRectangle = new Rect();
 
         // set up different paint objects
-        mGridPaint = initPaint(Color.BLACK, Paint.Style.STROKE, 8);
-        mRectPaint = initPaint(Color.BLUE, Paint.Style.STROKE, 8);
-        mPlayerSymbPaint = initPaint(Color.BLACK, Paint.Style.STROKE, 8);
-        mAISymbPaint = initPaint(Color.GREEN, Paint.Style.STROKE, 8);
+        mGridPaint = initPaint(Color.YELLOW, Paint.Style.STROKE, 3);
+        mRectPaint = initPaint(Color.BLUE, Paint.Style.STROKE, 3);
+        mPlayerSymbPaint = initPaint(Color.WHITE, Paint.Style.STROKE, 5);
+        mAISymbPaint = initPaint(Color.BLACK, Paint.Style.STROKE, 5);
     }
 
     /**

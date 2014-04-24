@@ -58,10 +58,10 @@ public class SpellingGameSurface extends SurfaceView {
         mRectangle = new Rect();
 
         // set up different paint objects
-        mRectPaint = initPaint(Color.BLUE, Paint.Style.STROKE, 5);
+        mRectPaint = initPaint(Color.BLUE, Paint.Style.STROKE, 2);
         mShuffledContPaint = initPaint(Color.GREEN, Paint.Style.STROKE, 5);
-        mSpelledContPaint = initPaint(Color.GREEN, Paint.Style.STROKE, 5);
-        mTextPaint = initPaint(Color.RED, TEXT_SIZE);
+        mSpelledContPaint = initPaint(Color.YELLOW, Paint.Style.STROKE, 2);
+        mTextPaint = initPaint(Color.WHITE, TEXT_SIZE);
         mShuffledContainer = new Rect();
         mSpelledContainer = new Rect();
     }
@@ -133,7 +133,7 @@ public class SpellingGameSurface extends SurfaceView {
 
         if(mCanvas != null) {
             Log.v(TAG, "Draw Game Field");
-            mCanvas.drawColor(Color.DKGRAY);
+            mCanvas.drawColor(Color.BLACK);
         }
     }
 

@@ -663,7 +663,7 @@ public class BluetoothService extends Service {
         public void run() {
             Log.v(TAG, "Run");
 
-            byte[] inBuffer = new byte[1024]; // input buffer that will store the msg form Android
+            byte[] inBuffer = new byte[3000]; // input buffer that will store the msg form Android
             int bytes; // bytes returned from mmInStream.read
 
             // listen to incoming data until exception occurs
