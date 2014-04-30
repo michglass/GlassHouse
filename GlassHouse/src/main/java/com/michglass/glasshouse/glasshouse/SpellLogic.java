@@ -74,13 +74,11 @@ public class SpellLogic {
         mGameWords = new ArrayList<String>();
         mGameWords.add("cat");
         mGameWords.add("dog");
-        mGameWords.add("mouse");
         mGameWords.add("fun");
         mGameWords.add("bambi");
         mGameWords.add("pink");
         mGameWords.add("blue");
         mGameWords.add("cow");
-        mGameWords.add("purple");
         mGameWords.add("toy");
         mGameWords.add("car");
 
@@ -432,7 +430,7 @@ public class SpellLogic {
 
                 if(mKeepRunning) {
                     try {
-                        sleep(4000);
+                        sleep(2000);
                     } catch (InterruptedException intE) {
                         Log.e(TAG, "Interrupted", intE);
                     }

@@ -403,7 +403,7 @@ public class DrawingLogic {
                     mSurfaceHolder.unlockCanvasAndPost(mCanvas);
                     try {
                         Log.v(TAG, "Delay Game");
-                        sleep(3000);
+                        sleep(2000);
                     } catch (InterruptedException intE) {
                         Log.e(TAG, "Game Thread interrupted");
                     }
